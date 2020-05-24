@@ -17,42 +17,95 @@ public class Main : MonoBehaviour
         Init(3);
     }
  
+    private List<Dot> allDots = new List<Dot>();
+    private Dictionary<Dot, List<Dial>> dotOwners = new Dictionary<Dot, List<Dial>>();
+
     void Init(int dialCount) {
-        //TODO Make sure can't loop forever
+        // Initial dial
         dials = new Dial[dialCount];
-        dials[0] = new Dial(Random.Range(6,16),Random.Range(380.0f+100f,780.0f-100f));
-        dials[0].pos = new Vector3(Random.Range(-3f,3f),Random.Range(-3f,3f),0);
+        {
+            Dial dial = new Dial(Random.Range(6,16),Random.Range(380.0f+100f,780.0f-100f));
+            dials[0] = dial;
+            for (int i = 0; i < dials[0].dotCount; i++) {
+                Dot dot = new Dot();
+                dial.dots[i] = dot;
+                dot.wavelengths.Add(dial.wavelength);
+                allDots.Add(dot);
+                dotOwners[dot] = dotOwners[dot] ?? new List<Dial>();
+                dotOwners[dot].Add(dial);
+            }
+        }
         int count = 1;
         int total = 0;
         outerLoop: while (count < dialCount) {
             total++;
             if (total > 1000) {
-                Debug.Log("ERROR hit init cap");
+                Debug.LogError("ERROR hit init cap");
                 return;
             }
-            dials[count] = new Dial(Random.Range(6,16),Random.Range(380.0f+100f,780.0f-100f));
-            dials[count].pos = new Vector3(Random.Range(-3f,3f),Random.Range(-3f,3f),0);
-            // Check validity
-            bool touching = false;
-            for (int i = 0; i < count; i++) {
-                // Check concentric
-                float dist = (dials[count].pos - dials[i].pos).magnitude;
-                Debug.Log("dists "+dials[count].getRadius()+" "+dials[i].getRadius()+" "+dist);
-                if (dist < dials[count].getRadius()+0.25f || dist < dials[i].getRadius()+0.25f) {
-                    goto outerLoop;
+            // New dial
+            Dial dial = new Dial(Random.Range(6,16),Random.Range(380.0f+100f,780.0f-100f));
+            dials[count] = dial;
+            Dot curDot = allDots[Random.Range(0,allDots.Count)];
+            dial.dots[0] = curDot;
+            Dial attachedDial;
+            // Attach to neighbor dial
+            if (dotOwners[curDot].Count > 1) { //TODO Yeah, I just don't wanna deal with that right now.  Maybe ever.
+                foreach (KeyValuePair<Dot, List<Dial>> entry in dotOwners) {
+                    entry.Value.RemoveAll(item => item == dial);
                 }
-                // Check touching
-                if (dist < dials[count].getRadius()+dials[i].getRadius()-0.1f) {
-                    touching = true;
-                }
-            }
-            if (!touching) {
+                //TODO Any other cleanup
                 goto outerLoop;
+            } else {
+                attachedDial = dotOwners[curDot][0];
             }
+            int dotCount = 1;
+            // Crawl along dots, maybe detach
+            while (dotCount < dial.dotCount) {
+                if (Random.Range(0,dial.dotCount) < 2) { //TODO Consider
+                    attachedDial = null; // Detach
+                }
+                if (attachedDial != null) {
+                    curDot = attachedDial.cwDot(curDot);
+                    if (dotOwners[curDot].Count > 1) { // We've come to a junction
+                        if (dotOwners[curDot].Count == 2) {
+                            attachedDial = dotOwners[curDot][1-dotOwners[curDot].IndexOf(attachedDial)];
+                        } else {
+                            //TODO Yeah, I just don't wanna deal with that right now.  Maybe ever.
+                            foreach (KeyValuePair<Dot, List<Dial>> entry in dotOwners) {
+                                entry.Value.RemoveAll(item => item == dial);
+                            }
+                            //TODO Any other cleanup
+                            goto outerLoop;
+                        }
+                    }
+                } else {
+                    curDot = new Dot();
+                }
+                dial.dots[dotCount] = curDot;
+                dotCount++;
+            }
+
+
+            // Updating dots on successful dial init
+            foreach (Dot d in dial.dots) {
+                dotOwners[d] = dotOwners[d] ?? new List<Dial>();
+                if (dotOwners[d].Contains(dial)) {
+                    // FREAK OUT
+                    Debug.LogError("FREAK OUT ; dot is owned twice by same dial - probably wrapped all the way around");
+                    System.Environment.Exit(0);
+                    return;
+                }
+                if (!allDots.Contains(d)) {
+                    allDots.Add(d);
+                }
+                dotOwners[d].Add(dial);
+                d.wavelengths.Add(dial.wavelength);
+            }
+
+
             count++;
             Debug.Log("success");
-        }
-        for (int i = 0; i < dialCount; i++) {
         }
     }
     
@@ -118,9 +171,10 @@ public class Main : MonoBehaviour
         GL.MultMatrix(transform.localToWorldMatrix);
 
         foreach (Dial dial in dials) {
-            for (int i = 0; i < dial.dots; i++) {
-                float a = (i*Mathf.PI*2)/dial.dots;
-                float radius = dial.getRadius();
+            for (int i = 0; i < dial.dotCount; i++) {
+                float a = (i*Mathf.PI*2)/dial.dotCount;
+                //float radius = dial.getRadius();
+                float radius = dial.dotCount * 2f / 10;
                 //Color color = new Color(dial.wavelength,1-dial.wavelength,Mathf.Sin(dial.wavelength*Mathf.PI*2),1);
                 Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(new Dictionary<double,double>{
                     { dial.wavelength, 1.0 }

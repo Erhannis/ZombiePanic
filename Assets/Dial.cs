@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -34,6 +35,7 @@ public class Dial
         if (dotCount > 0) {
             update[dots[dotCount-1]] = dots[0];
         }
+        return update;
     }
 
     public Dictionary<Dot,Dot> getCounterclockwise() {
@@ -44,6 +46,7 @@ public class Dial
         if (dotCount > 0) {
             update[dots[0]] = dots[dotCount-1];
         }
+        return update;
     }
 
     public void updateDots(Dictionary<Dot,Dot> update) {
@@ -52,5 +55,21 @@ public class Dial
                 dots[i] = update[dots[i]];
             }
         }
+    }
+
+    public Dot cwDot(Dot d) {
+        int i = Array.IndexOf(dots,d);
+        if (i < 0) {
+            return null;
+        }
+        return dots[Utils.mod(i-1,dotCount)];
+    }
+
+    public Dot ccwDot(Dot d) {
+        int i = Array.IndexOf(dots,d);
+        if (i < 0) {
+            return null;
+        }
+        return dots[Utils.mod(i+1,dotCount)];
     }
 }
