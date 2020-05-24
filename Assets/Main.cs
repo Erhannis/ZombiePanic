@@ -18,8 +18,8 @@ public class Main : MonoBehaviour
     }
  
     private List<Dot> allDots = new List<Dot>();
-    private Dictionary<Dot, List<Dial>> dotOwners = new Dictionary<Dot, List<Dial>>();
-    private Dictionary<Dot, List<Dial>> properDotOwners = new Dictionary<Dot, List<Dial>>();
+    private Dictionary<Dot, HashSet<Dial>> dotOwners = new Dictionary<Dot, HashSet<Dial>>();
+    private Dictionary<Dot, HashSet<Dial>> properDotOwners = new Dictionary<Dot, HashSet<Dial>>();
 
     void Init(int dialCount) {
         // Initial dial
@@ -33,7 +33,7 @@ public class Main : MonoBehaviour
                 dial.dots[i] = dot;
                 dot.wavelengths.Add(dial.wavelength);
                 allDots.Add(dot);
-                if (!dotOwners.ContainsKey(dot)) {dotOwners[dot] = new List<Dial>();}
+                if (!dotOwners.ContainsKey(dot)) {dotOwners[dot] = new HashSet<Dial>();}
                 dotOwners[dot].Add(dial);
             }
             Debug.Log("success");
@@ -51,16 +51,18 @@ public class Main : MonoBehaviour
             dials[count] = dial;
             Dot curDot = allDots[Random.Range(0,allDots.Count)];
             dial.dots[0] = curDot;
-            Dial attachedDial;
+            Dial attachedDial = null;
             // Attach to neighbor dial
             if (dotOwners[curDot].Count > 1) { //TODO Yeah, I just don't wanna deal with that right now.  Maybe ever.
-                foreach (KeyValuePair<Dot, List<Dial>> entry in dotOwners) {
-                    entry.Value.RemoveAll(item => item == dial);
+                foreach (KeyValuePair<Dot, HashSet<Dial>> entry in dotOwners) {
+                    entry.Value.Remove(dial);
                 }
                 //TODO Any other cleanup
                 goto outerLoop;
-            } else {
-                attachedDial = dotOwners[curDot][0];
+            } else {                
+                foreach (Dial otherDial in dotOwners[curDot]) {
+                    attachedDial = otherDial;
+                }
             }
             int dotCount = 1;
             // Crawl along dots, maybe detach
@@ -72,11 +74,16 @@ public class Main : MonoBehaviour
                     curDot = attachedDial.cwDot(curDot);
                     if (dotOwners[curDot].Count > 1) { // We've come to a junction
                         if (dotOwners[curDot].Count == 2) {
-                            attachedDial = dotOwners[curDot][1-dotOwners[curDot].IndexOf(attachedDial)];
+                            foreach (Dial otherDial in dotOwners[curDot]) {
+                                if (otherDial != attachedDial) {
+                                    attachedDial = otherDial;
+                                    break;
+                                }
+                            }
                         } else {
                             //TODO Yeah, I just don't wanna deal with that right now.  Maybe ever.
-                            foreach (KeyValuePair<Dot, List<Dial>> entry in dotOwners) {
-                                entry.Value.RemoveAll(item => item == dial);
+                            foreach (KeyValuePair<Dot, HashSet<Dial>> entry in dotOwners) {
+                                entry.Value.Remove(dial);
                             }
                             //TODO Any other cleanup
                             goto outerLoop;
@@ -92,7 +99,7 @@ public class Main : MonoBehaviour
 
             // Updating dots on successful dial init
             foreach (Dot d in dial.dots) {
-                if (!dotOwners.ContainsKey(d)) {dotOwners[d] = new List<Dial>();}
+                if (!dotOwners.ContainsKey(d)) {dotOwners[d] = new HashSet<Dial>();}
                 if (dotOwners[d].Contains(dial)) {
                     // FREAK OUT
                     Debug.LogError("FREAK OUT ; dot is owned twice by same dial - probably wrapped all the way around");
@@ -176,7 +183,7 @@ public class Main : MonoBehaviour
         Debug.Log("Done distributing");
         
         foreach (Dot dot in allDots) {
-            properDotOwners[dot] = new List<Dial>(dotOwners[dot]);
+            properDotOwners[dot] = new HashSet<Dial>(dotOwners[dot]);
         }
 
         Debug.Log("Scrambling...");
@@ -205,7 +212,7 @@ public class Main : MonoBehaviour
         dotOwners.Clear();
         foreach (Dial dial in dials) {
             foreach (Dot dot in dial.dots) {
-                if (!dotOwners.ContainsKey(dot)) {dotOwners[dot] = new List<Dial>();}
+                if (!dotOwners.ContainsKey(dot)) {dotOwners[dot] = new HashSet<Dial>();}
                 dotOwners[dot].Add(dial);
             }
         }
@@ -225,7 +232,16 @@ public class Main : MonoBehaviour
     }
       
     private void checkWin() {
-        
+        bool wins = true;
+        foreach (Dot dot in allDots) {
+            if (!dotOwners[dot].SetEquals(properDotOwners[dot])) {
+                wins = false;
+                break;
+            }
+        }
+        if (wins) {
+            Debug.Log("You win!");
+        }
     }
 
     // Update is called once per frame
@@ -236,7 +252,7 @@ public class Main : MonoBehaviour
 
         for (int i = 0; i < dials.Length; i++) {
             if (Input.GetKeyDown(""+(i+1))) {
-                turn(dials[i], !Input.GetKey(KeyCode.LeftShift));
+                turn(dials[i], !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)));
                 checkWin();
             }
         }
