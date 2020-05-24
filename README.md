@@ -1,0 +1,2 @@
+# InterlockingDials
+First of my "one stupid game a week" challenge.  It's technically a game, and you can technically play it!  Unity game where you have a number of chains, with segments connected, and you use your keyboard numbers (+shift) to rotate them.  "s" to scramble, then try to solve.  It frequently dies in initialization, so you'll probably have to close it and restart it a number of times.  The colors also frequently end up too similar.  Sorry!
