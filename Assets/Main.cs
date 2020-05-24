@@ -187,14 +187,7 @@ public class Main : MonoBehaviour
         }
 
         Debug.Log("Scrambling...");
-        for (int i = 0; i < 0; i++) {
-            Dial turnDial = dials[Random.Range(0,dials.Length)];
-            if (Random.Range(0,2) == 1) {
-                turn(turnDial, true);
-            } else {
-                turn(turnDial, false);
-            }
-        }
+        // scramble?
         Debug.Log("Done scrambling");
         Debug.Log("Done init");
     }
@@ -244,6 +237,17 @@ public class Main : MonoBehaviour
         }
     }
 
+    private void scramble() {
+        for (int i = 0; i < 1000; i++) {
+            Dial turnDial = dials[Random.Range(0,dials.Length)];
+            if (Random.Range(0,2) == 1) {
+                turn(turnDial, true);
+            } else {
+                turn(turnDial, false);
+            }
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -255,6 +259,9 @@ public class Main : MonoBehaviour
                 turn(dials[i], !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)));
                 checkWin();
             }
+        }
+        if (Input.GetKeyDown("s")) {
+            scramble();
         }
 
         // foreach (GameObject o in objs) {
