@@ -10,7 +10,7 @@ public class Main : MonoBehaviour
     private Random rand = new Random();
     private Dial[] dials = new Dial[0];
 
-    private int targetFPS = 1;
+    private int targetFPS = 10;
 
     void Start()
     {
@@ -31,9 +31,10 @@ public class Main : MonoBehaviour
                 dial.dots[i] = dot;
                 dot.wavelengths.Add(dial.wavelength);
                 allDots.Add(dot);
-                dotOwners[dot] = dotOwners[dot] ?? new List<Dial>();
+                if (!dotOwners.ContainsKey(dot)) {dotOwners[dot] = new List<Dial>();}
                 dotOwners[dot].Add(dial);
             }
+            Debug.Log("success");
         }
         int count = 1;
         int total = 0;
@@ -89,11 +90,11 @@ public class Main : MonoBehaviour
 
             // Updating dots on successful dial init
             foreach (Dot d in dial.dots) {
-                dotOwners[d] = dotOwners[d] ?? new List<Dial>();
+                if (!dotOwners.ContainsKey(d)) {dotOwners[d] = new List<Dial>();}
                 if (dotOwners[d].Contains(dial)) {
                     // FREAK OUT
                     Debug.LogError("FREAK OUT ; dot is owned twice by same dial - probably wrapped all the way around");
-                    System.Environment.Exit(0);
+//                    System.Environment.Exit(0);
                     return;
                 }
                 if (!allDots.Contains(d)) {

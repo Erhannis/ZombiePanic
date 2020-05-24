@@ -54,7 +54,7 @@ public static double[,] CIE_COLOR_MATCH = {
     //TODO I think something in this color stack is off, somehow
   public static double[] spectrum_to_xyz(Dictionary<double,double> specIntens, double scale) {
 //        Debug.Log("spectrum_to_xyz"+specIntens);
-    double lambda, X = 0, Y = 0, Z = 0, XYZ;
+    double X = 0, Y = 0, Z = 0;
     foreach(KeyValuePair<double, double> entry in specIntens)
     {
 //        Debug.Log("spectrum_to_xyz 1 "+entry.Key+" "+entry.Value);
