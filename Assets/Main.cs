@@ -14,7 +14,7 @@ public class Main : MonoBehaviour
 
     void Start()
     {
-        Init(2);
+        Init(3);
     }
  
     private List<Dot> allDots = new List<Dot>();
@@ -26,7 +26,8 @@ public class Main : MonoBehaviour
         dials = new Dial[dialCount];
         {
             //Dial dial = new Dial(Random.Range(6,16),Random.Range(380.0f+100f,780.0f-100f));
-            Dial dial = new Dial(Random.Range(8,8),Random.Range(380.0f+100f,780.0f-100f));
+            //Dial dial = new Dial(Random.Range(8,8),Random.Range(380.0f+100f,780.0f-100f));
+            Dial dial = new Dial(Random.Range(4,7),Random.Range(380.0f+100f,780.0f-100f));
             dials[0] = dial;
             for (int i = 0; i < dials[0].dotCount; i++) {
                 Dot dot = new Dot();
