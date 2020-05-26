@@ -21,13 +21,24 @@ public class Main : MonoBehaviour
     private Dictionary<Dot, HashSet<Dial>> dotOwners = new Dictionary<Dot, HashSet<Dial>>();
     private Dictionary<Dot, HashSet<Dial>> properDotOwners = new Dictionary<Dot, HashSet<Dial>>();
 
+    private List<double> wavelengths = new List<double> {
+        460,
+        534,
+        630
+    };
+
+    private double getWavelength(int i) {
+        //return Random.Range(380.0f+100f,780.0f-100f);
+        return wavelengths[i];
+    }
+
     void Init(int dialCount) {
         // Initial dial
         dials = new Dial[dialCount];
         {
             //Dial dial = new Dial(Random.Range(6,16),Random.Range(380.0f+100f,780.0f-100f));
             //Dial dial = new Dial(Random.Range(8,8),Random.Range(380.0f+100f,780.0f-100f));
-            Dial dial = new Dial(Random.Range(4,7),Random.Range(380.0f+100f,780.0f-100f));
+            Dial dial = new Dial(Random.Range(4,7),getWavelength(0));
             dials[0] = dial;
             for (int i = 0; i < dials[0].dotCount; i++) {
                 Dot dot = new Dot();
@@ -48,7 +59,7 @@ public class Main : MonoBehaviour
                 return;
             }
             // New dial
-            Dial dial = new Dial(Random.Range(6,16),Random.Range(380.0f+100f,780.0f-100f));
+            Dial dial = new Dial(Random.Range(6,16),getWavelength(count));
             dials[count] = dial;
             Dot curDot = allDots[Random.Range(0,allDots.Count)];
             dial.dots[0] = curDot;
@@ -124,58 +135,7 @@ public class Main : MonoBehaviour
             d.pos = new Vector3(Random.Range(-3f,3f),Random.Range(-3f,3f),0);
         }
         for (int i = 0; i < 1000; i++) {
-            // Apply forces
-            foreach (Dot d in allDots) {
-                float forceScale = 0.01f;
-                Vector3 force = new Vector3(0,0,0);
-                foreach (Dot d2 in allDots) { // Repulsive
-                    if (d == d2) {
-                        continue;
-                    }
-                    Vector3 diff = d.pos - d2.pos;
-
-                    force += diff.normalized * (1 / diff.magnitude);
-                }
-                HashSet<Dot> neighbors = new HashSet<Dot>();
-                foreach (Dial dial in dials) {
-                    Dot d0;
-                    d0 = dial.cwDot(d);
-                    if (d0 != null) {
-                        neighbors.Add(d0);
-                    }
-                    d0 = dial.ccwDot(d);
-                    if (d0 != null) {
-                        neighbors.Add(d0);
-                    }
-                }
-                foreach (Dot d2 in neighbors) { // Attractive
-                    if (d == d2) {
-                        continue;
-                    }
-                    Vector3 diff = d.pos - d2.pos;
-
-                    force += 1 * (diff.normalized * Mathf.Pow((1 - diff.magnitude),3));
-                }
-
-                // Apply force
-                d.pos += force*forceScale;
-            }
-
-            // Normalize
-            Vector3 min = new Vector3(0,0,0);
-            Vector3 max = new Vector3(0,0,0);
-            foreach (Dot d in allDots) {
-                min.x = Mathf.Min(min.x, d.pos.x);
-                min.y = Mathf.Min(min.y, d.pos.y);
-                max.x = Mathf.Max(max.x, d.pos.x);
-                max.y = Mathf.Max(max.y, d.pos.y);
-            }
-            float size = Mathf.Max(max.x-min.x,max.y-min.y);
-            Vector3 center = (max+min)/2;
-            float scale = 6f / size;
-            foreach (Dot d in allDots) { // Apply normalization
-                d.pos = (d.pos - center) * scale;
-            }
+            spread();
         }
         Debug.Log("Result");
         foreach (Dot d in allDots) {
@@ -193,6 +153,61 @@ public class Main : MonoBehaviour
         Debug.Log("Done init");
     }
     
+    private void spread() {
+        // Apply forces
+        foreach (Dot d in allDots) {
+            float forceScale = 0.01f;
+            Vector3 force = new Vector3(0,0,0);
+            foreach (Dot d2 in allDots) { // Repulsive
+                if (d == d2) {
+                    continue;
+                }
+                Vector3 diff = d.pos - d2.pos;
+
+                force += diff.normalized * (1 / diff.magnitude);
+            }
+            HashSet<Dot> neighbors = new HashSet<Dot>();
+            foreach (Dial dial in dials) {
+                Dot d0;
+                d0 = dial.cwDot(d);
+                if (d0 != null) {
+                    neighbors.Add(d0);
+                }
+                d0 = dial.ccwDot(d);
+                if (d0 != null) {
+                    neighbors.Add(d0);
+                }
+            }
+            foreach (Dot d2 in neighbors) { // Attractive
+                if (d == d2) {
+                    continue;
+                }
+                Vector3 diff = d.pos - d2.pos;
+
+                force += 1 * (diff.normalized * Mathf.Pow((1 - diff.magnitude),3));
+            }
+
+            // Apply force
+            d.pos += force*forceScale;
+        }
+
+        // Normalize
+        Vector3 min = new Vector3(0,0,0);
+        Vector3 max = new Vector3(0,0,0);
+        foreach (Dot d in allDots) {
+            min.x = Mathf.Min(min.x, d.pos.x);
+            min.y = Mathf.Min(min.y, d.pos.y);
+            max.x = Mathf.Max(max.x, d.pos.x);
+            max.y = Mathf.Max(max.y, d.pos.y);
+        }
+        float size = Mathf.Max(max.x-min.x,max.y-min.y);
+        Vector3 center = (max+min)/2;
+        float scale = 6f / size;
+        foreach (Dot d in allDots) { // Apply normalization
+            d.pos = (d.pos - center) * scale;
+        }
+    }
+
     private void turn(Dial turnDial, bool cw) {
         Dictionary<Dot,Dot> update;
         if (cw) {
@@ -278,59 +293,8 @@ public class Main : MonoBehaviour
         // }        
 
 
+        spread();
 
-            // Apply forces
-            foreach (Dot d in allDots) {
-                float forceScale = 0.01f;
-                Vector3 force = new Vector3(0,0,0);
-                foreach (Dot d2 in allDots) { // Repulsive
-                    if (d == d2) {
-                        continue;
-                    }
-                    Vector3 diff = d.pos - d2.pos;
-
-                    force += diff.normalized * (1 / diff.magnitude);
-                }
-                HashSet<Dot> neighbors = new HashSet<Dot>();
-                foreach (Dial dial in dials) {
-                    Dot d0;
-                    d0 = dial.cwDot(d);
-                    if (d0 != null) {
-                        neighbors.Add(d0);
-                    }
-                    d0 = dial.ccwDot(d);
-                    if (d0 != null) {
-                        neighbors.Add(d0);
-                    }
-                }
-                foreach (Dot d2 in neighbors) { // Attractive
-                    if (d == d2) {
-                        continue;
-                    }
-                    Vector3 diff = d.pos - d2.pos;
-
-                    force += 1 * (diff.normalized * Mathf.Pow((1 - diff.magnitude),3));
-                }
-
-                // Apply force
-                d.pos += force*forceScale;
-            }
-
-            // Normalize
-            Vector3 min = new Vector3(0,0,0);
-            Vector3 max = new Vector3(0,0,0);
-            foreach (Dot d in allDots) {
-                min.x = Mathf.Min(min.x, d.pos.x);
-                min.y = Mathf.Min(min.y, d.pos.y);
-                max.x = Mathf.Max(max.x, d.pos.x);
-                max.y = Mathf.Max(max.y, d.pos.y);
-            }
-            float size = Mathf.Max(max.x-min.x,max.y-min.y);
-            Vector3 center = (max+min)/2;
-            float scale = 6f / size;
-            foreach (Dot d in allDots) { // Apply normalization
-                d.pos = (d.pos - center) * scale;
-            }
     }
 
     // When added to an object, draws colored rays from the
