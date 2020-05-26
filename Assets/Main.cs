@@ -21,7 +21,7 @@ public class Main : MonoBehaviour
     private Dictionary<Dot, HashSet<Dial>> dotOwners = new Dictionary<Dot, HashSet<Dial>>();
     private Dictionary<Dot, HashSet<Dial>> properDotOwners = new Dictionary<Dot, HashSet<Dial>>();
 
-    private List<double> wavelengths = new List<double> {
+    private List<double> wavelengths = new List<double> { //TODO Y'know, I'm not sure the wavelength code is calibrated right
         460,
         534,
         630
@@ -164,7 +164,7 @@ public class Main : MonoBehaviour
                 }
                 Vector3 diff = d.pos - d2.pos;
 
-                force += diff.normalized * (1 / diff.magnitude);
+                force += diff.normalized * 1;// * (1 / diff.magnitude);
             }
             HashSet<Dot> neighbors = new HashSet<Dot>();
             foreach (Dial dial in dials) {
@@ -184,7 +184,7 @@ public class Main : MonoBehaviour
                 }
                 Vector3 diff = d.pos - d2.pos;
 
-                force += 1 * (diff.normalized * Mathf.Pow((1 - diff.magnitude),3));
+                force += -10 * diff.normalized * (1-(1/((diff.magnitude*diff.magnitude)+1)));
             }
 
             // Apply force
