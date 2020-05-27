@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Main : MonoBehaviour
 {
-    //public ObjectPool pool;
+    public ObjectPool pool;
 
     //private List<GameObject> objs = new List<GameObject>();
     private Random rand = new Random();
@@ -150,9 +150,42 @@ public class Main : MonoBehaviour
         Debug.Log("Scrambling...");
         // scramble?
         Debug.Log("Done scrambling");
+
+        foreach (Dial dial in dials) {
+            GameObject cw = pool.GetObjectForType("CW", false);
+            GameObject ccw = pool.GetObjectForType("CCW", false);
+            Vector3 pos = new Vector3(0,0,0);
+            foreach (Dot dot in dial.dots) {
+                pos += dot.pos;
+            }
+            pos /= dial.dots.Length;
+            pos.z = -1;
+
+            cw.transform.position = pos + new Vector3(0.5f,0,1);
+            ccw.transform.position = pos + new Vector3(-0.5f,0,1);
+            Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(new Dictionary<double,double>{
+                { dial.wavelength, 1.0 }
+            }, 0.8),true));
+            cw.GetComponent<MeshRenderer>().material.color = color;
+            ccw.GetComponent<MeshRenderer>().material.color = color;
+            cw.GetComponent<Clickable>().onClick = () => {
+                turn(dial, true);
+            };
+            ccw.GetComponent<Clickable>().onClick = () => {
+                turn(dial, false);
+            };
+        }
+
         Debug.Log("Done init");
     }
     
+    // private void redistribute() {
+    //     for (int i = 0; i < 1000; i++) {
+    //         spread();
+    //     }
+    //     //TODO Move buttons        
+    // }
+
     private void spread() {
         // Apply forces
         foreach (Dot d in allDots) {
@@ -280,6 +313,9 @@ public class Main : MonoBehaviour
             scramble();
         }
 
+        var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Debug.Log(ray);
+
         // foreach (GameObject o in objs) {
         //     pool.PoolObject(o);
         // }
@@ -293,7 +329,7 @@ public class Main : MonoBehaviour
         // }        
 
 
-        spread();
+        //spread();
 
     }
 
