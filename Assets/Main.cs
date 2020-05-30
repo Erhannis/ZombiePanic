@@ -204,6 +204,10 @@ public class Main : MonoBehaviour
     // }
 
     private void spread() {
+        var vertExtent = Camera.main.GetComponent<Camera>().orthographicSize;    
+        var horizExtent = vertExtent * Screen.width / Screen.height;
+
+
         // Apply forces
         foreach (Dot d in allDots) {
             float forceScale = 0.01f;
@@ -250,9 +254,9 @@ public class Main : MonoBehaviour
             max.x = Mathf.Max(max.x, d.pos.x);
             max.y = Mathf.Max(max.y, d.pos.y);
         }
-        float size = Mathf.Max(max.x-min.x,max.y-min.y);
+        float size = Mathf.Max((max.x-min.x)/horizExtent,(max.y-min.y)/vertExtent);
         Vector3 center = (max+min)/2;
-        float scale = 6f / size;
+        float scale = 1.9f / size;
         foreach (Dot d in allDots) { // Apply normalization
             d.pos = (d.pos - center) * scale;
         }
