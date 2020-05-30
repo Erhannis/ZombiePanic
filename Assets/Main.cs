@@ -14,7 +14,7 @@ public class Main : MonoBehaviour
 
     void Start()
     {
-        Init(3);
+        Init(2);
     }
  
     private List<Dot> allDots = new List<Dot>();
@@ -148,7 +148,7 @@ public class Main : MonoBehaviour
         }
 
         Debug.Log("Scrambling...");
-        // scramble?
+        scramble();
         Debug.Log("Done scrambling");
 
         foreach (Dial dial in dials) {
@@ -170,11 +170,15 @@ public class Main : MonoBehaviour
             ccw.GetComponent<MeshRenderer>().material.color = color;
             cw.GetComponent<Clickable>().onClick = () => {
                 turn(dial, true);
+                checkWin();
             };
             ccw.GetComponent<Clickable>().onClick = () => {
                 turn(dial, false);
+                checkWin();
             };
         }
+
+        checkWin();
 
         Debug.Log("Done init");
     }
@@ -273,6 +277,8 @@ public class Main : MonoBehaviour
         Application.targetFrameRate = targetFPS;
     }
       
+    private static Color DEF_COLOR = new Color(49/255f,77/255f,121/255f);
+    private static Color WIN_COLOR = new Color(40/255f,90/255f,40/255f);
     private void checkWin() {
         bool wins = true;
         foreach (Dot dot in allDots) {
@@ -283,6 +289,9 @@ public class Main : MonoBehaviour
         }
         if (wins) {
             Debug.Log("You win!");
+            Camera.main.backgroundColor = WIN_COLOR;
+        } else {
+            Camera.main.backgroundColor = DEF_COLOR;
         }
     }
 
@@ -311,10 +320,11 @@ public class Main : MonoBehaviour
         }
         if (Input.GetKeyDown("s")) {
             scramble();
+            checkWin();
         }
 
-        var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        Debug.Log(ray);
+        //var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        //Debug.Log(ray);
 
         // foreach (GameObject o in objs) {
         //     pool.PoolObject(o);
