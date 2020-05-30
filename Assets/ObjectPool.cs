@@ -32,18 +32,13 @@ public class ObjectPool : MonoBehaviour
    
     void Awake ()
     {
-        instance = this;
-    }
-   
-    // Use this for initialization
-    void Start ()
-    {
         containerObject = new GameObject("ObjectPool");
        
         //Loop through the object prefabs and make a new list for each one.
         //We do this because the pool can only support prefabs set to it in the editor,
         //so we can assume the lists of pooled objects are in the same order as object prefabs in the array
         pooledObjects = new List<GameObject>[objectPrefabs.Length];
+        Debug.Log("pooledObjects " + pooledObjects);
        
         int i = 0;
         foreach ( GameObject objectPrefab in objectPrefabs )
@@ -65,6 +60,13 @@ public class ObjectPool : MonoBehaviour
            
             i++;
         }
+        
+        instance = this;
+    }
+   
+    // Use this for initialization
+    void Start ()
+    {
     }
    
     /// <summary>
