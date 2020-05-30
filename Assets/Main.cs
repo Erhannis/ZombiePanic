@@ -176,12 +176,17 @@ public class Main : MonoBehaviour
             }, 0.8),true));
             cw.GetComponent<MeshRenderer>().material.color = color;
             ccw.GetComponent<MeshRenderer>().material.color = color;
+
+            Dot dot1 = dial.dots[0];
+            Dot dot2 = dial.dots[1];
+            bool opposite = Vector3.SignedAngle(dot1.pos - pos, dot2.pos - pos, new Vector3(0,0,1)) > 0;
+
             cw.GetComponent<Clickable>().onClick = () => {
-                turn(dial, true);
+                turn(dial, opposite);
                 checkWin();
             };
             ccw.GetComponent<Clickable>().onClick = () => {
-                turn(dial, false);
+                turn(dial, !opposite);
                 checkWin();
             };
         }
