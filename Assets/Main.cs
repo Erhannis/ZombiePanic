@@ -14,12 +14,12 @@ public class Main : MonoBehaviour
 
     void Start()
     {
-        Init(2);
+        Init(3);
     }
  
-    private List<Dot> allDots = new List<Dot>();
-    private Dictionary<Dot, HashSet<Dial>> dotOwners = new Dictionary<Dot, HashSet<Dial>>();
-    private Dictionary<Dot, HashSet<Dial>> properDotOwners = new Dictionary<Dot, HashSet<Dial>>();
+    private List<Dot> allDots;
+    private Dictionary<Dot, HashSet<Dial>> dotOwners;
+    private Dictionary<Dot, HashSet<Dial>> properDotOwners;
 
     private List<double> wavelengths = new List<double> { //TODO Y'know, I'm not sure the wavelength code is calibrated right
         460,
@@ -33,6 +33,14 @@ public class Main : MonoBehaviour
     }
 
     void Init(int dialCount) {
+        int total = 0;
+
+        restartPoint: //TODO Ok, yeah, goto is bad.  ...it's just really temptingly easy, sometimes.
+
+        allDots = new List<Dot>();
+        dotOwners = new Dictionary<Dot, HashSet<Dial>>();
+        properDotOwners = new Dictionary<Dot, HashSet<Dial>>();
+
         // Initial dial
         dials = new Dial[dialCount];
         {
@@ -51,11 +59,11 @@ public class Main : MonoBehaviour
             Debug.Log("success");
         }
         int count = 1;
-        int total = 0;
         outerLoop: while (count < dialCount) {
             total++;
             if (total > 1000) {
                 Debug.LogError("ERROR hit init cap");
+                Camera.main.backgroundColor = new Color(1,0,0);
                 return;
             }
             // New dial
@@ -116,7 +124,7 @@ public class Main : MonoBehaviour
                     // FREAK OUT
                     Debug.LogError("FREAK OUT ; dot is owned twice by same dial - probably wrapped all the way around");
 //                    System.Environment.Exit(0);
-                    return;
+                    goto restartPoint;
                 }
                 if (!allDots.Contains(d)) {
                     allDots.Add(d);
@@ -180,7 +188,7 @@ public class Main : MonoBehaviour
 
         checkWin();
 
-        Debug.Log("Done init");
+        Debug.Log("Done init in " + total + " loops");
     }
     
     // private void redistribute() {
@@ -392,6 +400,33 @@ public class Main : MonoBehaviour
         //     }
         // }
 
+        foreach (Dial dial in dials) {
+            GL.Begin(GL.LINE_STRIP);
+            Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(new Dictionary<double,double>{
+                { dial.wavelength, 1.0 }
+            }, 0.8),true));
+            GL.Color(color);
+            Dot lastDot = null;
+            for (int i = 0; i <= dial.dotCount; i++) {
+                Dot newDot = dial.dots[Utils.mod(i,dial.dotCount)];
+                if (lastDot != null) {
+                    Dictionary<double,double> wls = new Dictionary<double,double>();
+                    HashSet<Dial> common = new HashSet<Dial>(dotOwners[newDot]); 
+                    common.IntersectWith(dotOwners[lastDot]);
+                    foreach (Dial d0 in common) {
+                        wls[d0.wavelength] = 1.0;
+                    }
+                    color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(wls, 0.8),true));
+                    GL.Color(color);
+                    GL.Vertex3(lastDot.pos.x, lastDot.pos.y, lastDot.pos.z);
+                }
+                Vector3 pos = newDot.pos;
+                GL.Vertex3(pos.x, pos.y, pos.z);
+                lastDot = newDot;
+            }
+            GL.End();
+        }
+
         foreach (Dot dot in allDots) {
             //Color color = new Color(dial.wavelength,1-dial.wavelength,Mathf.Sin(dial.wavelength*Mathf.PI*2),1);
             Dictionary<double,double> wls = new Dictionary<double,double>();
@@ -401,19 +436,6 @@ public class Main : MonoBehaviour
             Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(wls, 0.8),true));
             //Debug.Log("dot pos " + dot.pos);
             drawCircle(dot.pos, 0.1f, true, color);
-        }
-
-        foreach (Dial dial in dials) {
-            GL.Begin(GL.LINE_STRIP);
-            Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(new Dictionary<double,double>{
-                { dial.wavelength, 1.0 }
-            }, 0.8),true));
-            GL.Color(color);
-            for (int i = 0; i <= dial.dotCount; i++) {
-                Vector3 pos = dial.dots[Utils.mod(i,dial.dotCount)].pos;
-                GL.Vertex3(pos.x, pos.y, pos.z);
-            }
-            GL.End();
         }
 
 // Color debugging
