@@ -6,7 +6,7 @@ public class InitializeAdsScript : MonoBehaviour {
 
     string gameIdIOS = "3630062"; // iOS
     string gameIdAndroid = "3630063"; // Android
-    bool testMode = true;
+    bool testMode = false;
 
     string placementId = "PlayScreen";
 
