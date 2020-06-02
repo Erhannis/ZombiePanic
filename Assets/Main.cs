@@ -13,7 +13,11 @@ public class Main : MonoBehaviour
 
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
+    private const float TANK_RADIUS = 0.1f;
+    private const float HEAD_HEIGHT = 0.1f;
+    private static Vector2 G = new Vector2(0, -9.8f)*0.1f;
 
+    private Rect playBounds;
     private float[] elevations; // World units
 
     private Tank[] tanks;
@@ -36,6 +40,8 @@ public class Main : MonoBehaviour
         for (int i = 1; i < elevations.Length; i++) {
             elevations[i] = elevations[i-1] + (Random.Range(min, max));
         }
+
+        playBounds = new Rect(i2x(0),-10f,elevations.Length*PX_PER_UNIT,200f); // Extra high, for high shots
 
         tanks = new Tank[players];
         for (int i = 0; i < tanks.Length; i++) {
@@ -76,7 +82,34 @@ public class Main : MonoBehaviour
 
         if (Input.GetMouseButtonUp(0)) { // Left click (0-left,1-right,2-middle)
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            explode(new Vector2(ray.origin.x, ray.origin.y),0.5f);
+            int oi = tanks[currentPlayer].x;
+            float ox = i2x(oi);
+            float oy = elevations[oi]+HEAD_HEIGHT;
+
+            Vector2 origin = new Vector2(ox, oy);
+            Vector2 tap = new Vector2(ray.origin.x, ray.origin.y);
+
+            Vector2 p = new Vector2(origin.x, origin.y);
+            Vector2 v = tap-origin;
+            float speed = Mathf.Max(v.magnitude,1f);
+            float dt = 1/(speed * PX_PER_UNIT);
+            while (true) {
+                p += v*dt;
+                v += G*dt;
+
+                if (!playBounds.Contains(p)) {
+                    break;
+                }
+
+                int i = x2i(p.x);
+                if (0 <= i && i < elevations.Length && p.y <= elevations[i]) {
+                    // Hit!
+                    explode(p,0.5f); //PARAM Explosion radius
+                    break;
+                }
+            }
+            
+            //explode(ray.origin,0.5f);
             advancePlayer();
         }
     }
@@ -209,6 +242,7 @@ public class Main : MonoBehaviour
         // match our transform
         GL.MultMatrix(transform.localToWorldMatrix);
 
+        // Terrain
         GL.Begin(GL.LINE_STRIP);
         GL.Color(new Color(1,1,1));
         for (int i = 0; i < elevations.Length; i++) {
@@ -222,7 +256,7 @@ public class Main : MonoBehaviour
         foreach (Tank tank in tanks) {
             float x = i2x(tank.x);
             float y = elevations[tank.x];
-            drawCircle(new Vector3(x, y, 0), 0.1f, tank.alive, tank.color);
+            drawCircle(new Vector3(x, y, 0), TANK_RADIUS, tank.alive, tank.color);
         }
 
         GL.PopMatrix();
