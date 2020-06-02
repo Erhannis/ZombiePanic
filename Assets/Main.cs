@@ -12,9 +12,9 @@ public class Main : MonoBehaviour
     private const int TARGET_FPS = 10;
 
     private const int PX_PER_UNIT = 100;
-    private const double BOARD_WIDTH = 22.0; //TODO Calc from screen?
+    private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
 
-    private double[] elevations; // World units
+    private float[] elevations; // World units
 
     private Tank[] tanks;
 
@@ -26,14 +26,14 @@ public class Main : MonoBehaviour
     private List<Color> predefTankColors = new List<Color> {Color.blue, Color.red, Color.green, Color.magenta};
 
     void Init() {
-        elevations = new double[(int)(BOARD_WIDTH * PX_PER_UNIT)];
+        elevations = new float[(int)(BOARD_WIDTH * PX_PER_UNIT)];
         
         // Gen terrain
-        double min = -0.05;
-        double max = 0.05;
+        float min = -0.05f;
+        float max = 0.05f;
         elevations[0] = 0;
         for (int i = 1; i < elevations.Length; i++) {
-            elevations[i] = elevations[i-1] + (rand.NextDouble() * (max - min) + min);
+            elevations[i] = elevations[i-1] + (Random.Range(min, max));
         }
 
         tanks = new Tank[2];
@@ -71,8 +71,91 @@ public class Main : MonoBehaviour
         //     checkWin();
         // }
 
-        //var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        //Debug.Log(ray);
+        if (Input.GetMouseButtonUp(0)) { // Left click (0-left,1-right,2-middle)
+            var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            explode(new Vector2(ray.origin.x, ray.origin.y),0.5f);
+        }
+    }
+
+    private void checkWin() {
+        Tank living = null;
+        int aliveCount = 0;
+        foreach (Tank tank in tanks) {
+            if (tank.alive) {
+                aliveCount++;
+                living = tank;
+            }
+        }
+        if (aliveCount == 0) {
+            // Mutual destruction
+            Camera.main.backgroundColor = new Color(0,0,0);
+        } else if (aliveCount == 1) {
+            // Won
+            Camera.main.backgroundColor = living.color;
+        } else {
+            // Neither
+            Camera.main.backgroundColor = DEF_COLOR;
+        }
+    }
+
+    private void hitTank(Tank tank, float r) {
+        //TODO Could flash screen, something
+        tank.alive = false;
+        checkWin();
+    }
+
+    private void explode(Vector2 pos, float r) {
+        foreach (Tank tank in tanks) {
+            float x = i2x(tank.x);
+            float y = elevations[tank.x];
+
+            float edge_y = Mathf.Sqrt(Utils.sqr(r)-Utils.sqr(pos.x-x));
+            if (float.IsNaN(edge_y) || float.IsInfinity(edge_y)) { // Left/right of explosion
+                continue;
+            }
+
+            float reduction;
+            if (y <= pos.y - edge_y) { // Under explosion
+            } else if (y >= pos.y + edge_y) { // Above explosion
+            } else { // Inside explosion
+                hitTank(tank, r);
+            }
+        }
+
+        int left = Mathf.Clamp(x2i(pos.x-r)-1,0,elevations.Length);
+        int right = Mathf.Clamp(x2i(pos.x+r)+1,-1,elevations.Length-1);
+        if (left == elevations.Length || right == -1) {
+            // Offscreen
+        } else {
+            for (int i = left; i <= right; i++) {
+                float x = i2x(i);
+                float y = elevations[i];
+
+                float edge_y = Mathf.Sqrt(Utils.sqr(r)-Utils.sqr(pos.x-x));
+                if (float.IsNaN(edge_y) || float.IsInfinity(edge_y)) {
+                    continue;
+                }
+
+                float reduction;
+                if (y <= pos.y - edge_y) { // Untouched
+                    reduction = 0f;
+                } else if (y >= pos.y + edge_y) { // Full brunt
+                    reduction = 2*edge_y;
+                } else { // Partial
+                    reduction = y - (pos.y - edge_y);
+                }
+
+                elevations[i] -= reduction;
+            }
+        }
+    }
+
+    private float i2x(int i) {
+        return ((float)(i - (elevations.Length/2.0))) / PX_PER_UNIT;
+    }
+
+    private int x2i(float x) {
+        return (int)((x * PX_PER_UNIT) + (elevations.Length/2.0));
     }
 
     // When added to an object, draws colored rays from the
@@ -114,17 +197,17 @@ public class Main : MonoBehaviour
         GL.Begin(GL.LINE_STRIP);
         GL.Color(new Color(1,1,1));
         for (int i = 0; i < elevations.Length; i++) {
-            double x = ((double)(i - (elevations.Length/2.0))) / PX_PER_UNIT;
-            double y = elevations[i];
-            GL.Vertex3((float)x, (float)-10, 1);
-            GL.Vertex3((float)x, (float)y, 1);
+            float x = i2x(i);
+            float y = elevations[i];
+            GL.Vertex3(x, -10f, 1);
+            GL.Vertex3(x, y, 1);
         }
         GL.End();
 
         foreach (Tank tank in tanks) {
-            double x = ((double)(tank.x - (elevations.Length/2.0))) / PX_PER_UNIT;
-            double y = elevations[tank.x];
-            drawCircle(new Vector3((float)x, (float)y, 0), 0.1f, true, tank.color);
+            float x = i2x(tank.x);
+            float y = elevations[tank.x];
+            drawCircle(new Vector3(x, y, 0), 0.1f, tank.alive, tank.color);
         }
 
         GL.PopMatrix();
