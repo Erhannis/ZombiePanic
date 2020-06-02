@@ -7,357 +7,72 @@ public class Main : MonoBehaviour
     public ObjectPool pool;
 
     //private List<GameObject> objs = new List<GameObject>();
-    private Random rand = new Random();
-    private Dial[] dials = new Dial[0];
+    private System.Random rand = new System.Random();
 
-    private int targetFPS = 10;
+    private const int TARGET_FPS = 10;
+
+    private const int PX_PER_UNIT = 100;
+    private const double BOARD_WIDTH = 22.0; //TODO Calc from screen?
+
+    private double[] elevations; // World units
+
+    private Tank[] tanks;
 
     void Start()
     {
-        Init(3);
+        Init();
     }
  
-    private List<Dot> allDots;
-    private Dictionary<Dot, HashSet<Dial>> dotOwners;
-    private Dictionary<Dot, HashSet<Dial>> properDotOwners;
+    private List<Color> predefTankColors = new List<Color> {Color.blue, Color.red, Color.green, Color.magenta};
 
-    private List<double> wavelengths = new List<double> { //TODO Y'know, I'm not sure the wavelength code is calibrated right
-        460,
-        534,
-        630
-    };
-
-    private double getWavelength(int i) {
-        //return Random.Range(380.0f+100f,780.0f-100f);
-        return wavelengths[i];
-    }
-
-    void Init(int dialCount) {
-        int total = 0;
-
-        restartPoint: //TODO Ok, yeah, goto is bad.  ...it's just really temptingly easy, sometimes.
-
-        allDots = new List<Dot>();
-        dotOwners = new Dictionary<Dot, HashSet<Dial>>();
-        properDotOwners = new Dictionary<Dot, HashSet<Dial>>();
-
-        // Initial dial
-        dials = new Dial[dialCount];
-        {
-            //Dial dial = new Dial(Random.Range(6,16),Random.Range(380.0f+100f,780.0f-100f));
-            //Dial dial = new Dial(Random.Range(8,8),Random.Range(380.0f+100f,780.0f-100f));
-            Dial dial = new Dial(Random.Range(4,7),getWavelength(0));
-            dials[0] = dial;
-            for (int i = 0; i < dials[0].dotCount; i++) {
-                Dot dot = new Dot();
-                dial.dots[i] = dot;
-                dot.wavelengths.Add(dial.wavelength);
-                allDots.Add(dot);
-                if (!dotOwners.ContainsKey(dot)) {dotOwners[dot] = new HashSet<Dial>();}
-                dotOwners[dot].Add(dial);
-            }
-            Debug.Log("success");
-        }
-        int count = 1;
-        outerLoop: while (count < dialCount) {
-            total++;
-            if (total > 1000) {
-                Debug.LogError("ERROR hit init cap");
-                Camera.main.backgroundColor = new Color(1,0,0);
-                return;
-            }
-            // New dial
-            Dial dial = new Dial(Random.Range(6,16),getWavelength(count));
-            dials[count] = dial;
-            Dot curDot = allDots[Random.Range(0,allDots.Count)];
-            dial.dots[0] = curDot;
-            Dial attachedDial = null;
-            // Attach to neighbor dial
-            if (dotOwners[curDot].Count > 1) { //TODO Yeah, I just don't wanna deal with that right now.  Maybe ever.
-                foreach (KeyValuePair<Dot, HashSet<Dial>> entry in dotOwners) {
-                    entry.Value.Remove(dial);
-                }
-                //TODO Any other cleanup
-                goto outerLoop;
-            } else {                
-                foreach (Dial otherDial in dotOwners[curDot]) {
-                    attachedDial = otherDial;
-                }
-            }
-            int dotCount = 1;
-            // Crawl along dots, maybe detach
-            while (dotCount < dial.dotCount) {
-                if (Random.Range(0,dial.dotCount) < 2) { //TODO Consider
-                    attachedDial = null; // Detach
-                }
-                if (attachedDial != null) {
-                    curDot = attachedDial.cwDot(curDot);
-                    if (dotOwners[curDot].Count > 1) { // We've come to a junction
-                        if (dotOwners[curDot].Count == 2) {
-                            foreach (Dial otherDial in dotOwners[curDot]) {
-                                if (otherDial != attachedDial) {
-                                    attachedDial = otherDial;
-                                    break;
-                                }
-                            }
-                        } else {
-                            //TODO Yeah, I just don't wanna deal with that right now.  Maybe ever.
-                            foreach (KeyValuePair<Dot, HashSet<Dial>> entry in dotOwners) {
-                                entry.Value.Remove(dial);
-                            }
-                            //TODO Any other cleanup
-                            goto outerLoop;
-                        }
-                    }
-                } else {
-                    curDot = new Dot();
-                }
-                dial.dots[dotCount] = curDot;
-                dotCount++;
-            }
-
-
-            // Updating dots on successful dial init
-            foreach (Dot d in dial.dots) {
-                if (!dotOwners.ContainsKey(d)) {dotOwners[d] = new HashSet<Dial>();}
-                if (dotOwners[d].Contains(dial)) {
-                    // FREAK OUT
-                    Debug.LogError("FREAK OUT ; dot is owned twice by same dial - probably wrapped all the way around");
-//                    System.Environment.Exit(0);
-                    goto restartPoint;
-                }
-                if (!allDots.Contains(d)) {
-                    allDots.Add(d);
-                }
-                dotOwners[d].Add(dial);
-                d.wavelengths.Add(dial.wavelength);
-            }
-
-
-            count++;
-            Debug.Log("success");
-        }
-        Debug.Log("init in " + count + " loops");
-        Debug.Log("distributing...");
-        foreach (Dot d in allDots) {
-            d.pos = new Vector3(Random.Range(-3f,3f),Random.Range(-3f,3f),0);
-        }
-        for (int i = 0; i < 1000; i++) {
-            spread();
-        }
-        Debug.Log("Result");
-        foreach (Dot d in allDots) {
-            Debug.Log("dot " + d.pos);
-        }
-        Debug.Log("Done distributing");
+    void Init() {
+        elevations = new double[(int)(BOARD_WIDTH * PX_PER_UNIT)];
         
-        foreach (Dot dot in allDots) {
-            properDotOwners[dot] = new HashSet<Dial>(dotOwners[dot]);
+        // Gen terrain
+        double min = -0.05;
+        double max = 0.05;
+        elevations[0] = 0;
+        for (int i = 1; i < elevations.Length; i++) {
+            elevations[i] = elevations[i-1] + (rand.NextDouble() * (max - min) + min);
         }
 
-        Debug.Log("Scrambling...");
-        scramble();
-        Debug.Log("Done scrambling");
-
-        foreach (Dial dial in dials) {
-            GameObject cw = pool.GetObjectForType("CW", false);
-            GameObject ccw = pool.GetObjectForType("CCW", false);
-            Vector3 pos = new Vector3(0,0,0);
-            foreach (Dot dot in dial.dots) {
-                pos += dot.pos;
-            }
-            pos /= dial.dots.Length;
-            pos.z = -1;
-
-            cw.transform.position = pos + new Vector3(0.5f,0,1);
-            ccw.transform.position = pos + new Vector3(-0.5f,0,1);
-            Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(new Dictionary<double,double>{
-                { dial.wavelength, 1.0 }
-            }, 0.8),true));
-            cw.GetComponent<MeshRenderer>().material.color = color;
-            ccw.GetComponent<MeshRenderer>().material.color = color;
-
-            Dot dot1 = dial.dots[0];
-            Dot dot2 = dial.dots[1];
-            bool opposite = Vector3.SignedAngle(dot1.pos - pos, dot2.pos - pos, new Vector3(0,0,1)) > 0;
-
-            cw.GetComponent<Clickable>().onClick = () => {
-                turn(dial, opposite);
-                checkWin();
-            };
-            ccw.GetComponent<Clickable>().onClick = () => {
-                turn(dial, !opposite);
-                checkWin();
-            };
+        tanks = new Tank[2];
+        for (int i = 0; i < tanks.Length; i++) {
+            Tank tank = new Tank();
+            tank.x = Random.Range(0,elevations.Length);
+            tank.color = predefTankColors[i];
+            tanks[i] = tank;
         }
 
-        checkWin();
-
-        Debug.Log("Done init in " + total + " loops");
+        //TODO
     }
     
-    // private void redistribute() {
-    //     for (int i = 0; i < 1000; i++) {
-    //         spread();
-    //     }
-    //     //TODO Move buttons        
-    // }
-
-    private void spread() {
-        var vertExtent = Camera.main.GetComponent<Camera>().orthographicSize;    
-        var horizExtent = vertExtent * Screen.width / Screen.height;
-
-
-        // Apply forces
-        foreach (Dot d in allDots) {
-            float forceScale = 0.01f;
-            Vector3 force = new Vector3(0,0,0);
-            foreach (Dot d2 in allDots) { // Repulsive
-                if (d == d2) {
-                    continue;
-                }
-                Vector3 diff = d.pos - d2.pos;
-
-                force += diff.normalized * 1;// * (1 / diff.magnitude);
-            }
-            HashSet<Dot> neighbors = new HashSet<Dot>();
-            foreach (Dial dial in dials) {
-                Dot d0;
-                d0 = dial.cwDot(d);
-                if (d0 != null) {
-                    neighbors.Add(d0);
-                }
-                d0 = dial.ccwDot(d);
-                if (d0 != null) {
-                    neighbors.Add(d0);
-                }
-            }
-            foreach (Dot d2 in neighbors) { // Attractive
-                if (d == d2) {
-                    continue;
-                }
-                Vector3 diff = d.pos - d2.pos;
-
-                force += -10 * diff.normalized * (1-(1/((diff.magnitude*diff.magnitude)+1)));
-            }
-
-            // Apply force
-            d.pos += force*forceScale;
-        }
-
-        // Normalize
-        Vector3 min = new Vector3(0,0,0);
-        Vector3 max = new Vector3(0,0,0);
-        foreach (Dot d in allDots) {
-            min.x = Mathf.Min(min.x, d.pos.x);
-            min.y = Mathf.Min(min.y, d.pos.y);
-            max.x = Mathf.Max(max.x, d.pos.x);
-            max.y = Mathf.Max(max.y, d.pos.y);
-        }
-        float size = Mathf.Max((max.x-min.x)/horizExtent,(max.y-min.y)/vertExtent);
-        Vector3 center = (max+min)/2;
-        float scale = 1.9f / size;
-        foreach (Dot d in allDots) { // Apply normalization
-            d.pos = (d.pos - center) * scale;
-        }
-    }
-
-    private void turn(Dial turnDial, bool cw) {
-        Dictionary<Dot,Dot> update;
-        if (cw) {
-            update = turnDial.getClockwise();
-        } else {
-            update = turnDial.getCounterclockwise();
-        }
-        foreach (Dial dial in dials) {
-            dial.updateDots(update);
-        }
-        dotOwners.Clear();
-        foreach (Dial dial in dials) {
-            foreach (Dot dot in dial.dots) {
-                if (!dotOwners.ContainsKey(dot)) {dotOwners[dot] = new HashSet<Dial>();}
-                dotOwners[dot].Add(dial);
-            }
-        }
-        Dictionary<Dot,Vector3> newPositions = new Dictionary<Dot, Vector3>();
-        foreach (KeyValuePair<Dot,Dot> entry in update) {
-            newPositions[entry.Value] = entry.Key.pos;
-        }
-        foreach (KeyValuePair<Dot,Vector3> entry in newPositions) {
-            entry.Key.pos = entry.Value;
-        }
-    }
-
     void Awake()
     {
         QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = targetFPS;
+        Application.targetFrameRate = TARGET_FPS;
     }
       
     private static Color DEF_COLOR = new Color(49/255f,77/255f,121/255f);
     private static Color WIN_COLOR = new Color(40/255f,90/255f,40/255f);
-    private void checkWin() {
-        bool wins = true;
-        foreach (Dot dot in allDots) {
-            if (!dotOwners[dot].SetEquals(properDotOwners[dot])) {
-                wins = false;
-                break;
-            }
-        }
-        if (wins) {
-            Debug.Log("You win!");
-            Camera.main.backgroundColor = WIN_COLOR;
-        } else {
-            Camera.main.backgroundColor = DEF_COLOR;
-        }
-    }
-
-    private void scramble() {
-        for (int i = 0; i < 1000; i++) {
-            Dial turnDial = dials[Random.Range(0,dials.Length)];
-            if (Random.Range(0,2) == 1) {
-                turn(turnDial, true);
-            } else {
-                turn(turnDial, false);
-            }
-        }
-    }
 
     // Update is called once per frame
     void Update()
     {
-        if (Application.targetFrameRate != targetFPS)
-            Application.targetFrameRate = targetFPS;
+        if (Application.targetFrameRate != TARGET_FPS)
+            Application.targetFrameRate = TARGET_FPS;
 
-        for (int i = 0; i < dials.Length; i++) {
-            if (Input.GetKeyDown(""+(i+1))) {
-                turn(dials[i], !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)));
-                checkWin();
-            }
-        }
-        if (Input.GetKeyDown("s")) {
-            scramble();
-            checkWin();
-        }
+        // if (Input.GetKeyDown(""+(i+1))) {
+        //     turn(dials[i], !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)));
+        //     checkWin();
+        // }
+        // if (Input.GetKeyDown("s")) {
+        //     scramble();
+        //     checkWin();
+        // }
 
         //var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         //Debug.Log(ray);
-
-        // foreach (GameObject o in objs) {
-        //     pool.PoolObject(o);
-        // }
-        // objs.Clear();
-        
-        // for (int i = 0; i < 10; i++) {
-        //     GameObject obj = pool.GetObjectForType("Circle", false);
-        //     obj.GetComponent<MeshRenderer>().material.SetColor("_Color", new Color(1,Random.Range(0f,1f),Random.Range(0f,1f),Random.Range(0f,1f)));
-        //     obj.transform.position = new Vector3(Random.Range(-4f,4f), Random.Range(-4f,4f), 1);
-        //     objs.Add(obj);
-        // }        
-
-
-        //spread();
-
     }
 
     // When added to an object, draws colored rays from the
@@ -396,72 +111,21 @@ public class Main : MonoBehaviour
         // match our transform
         GL.MultMatrix(transform.localToWorldMatrix);
 
-        // foreach (Dial dial in dials) {
-        //     for (int i = 0; i < dial.dotCount; i++) {
-        //         float a = (i*Mathf.PI*2)/dial.dotCount;
-        //         //float radius = dial.getRadius();
-        //         float radius = dial.dotCount * 2f / 10;
-        //         //Color color = new Color(dial.wavelength,1-dial.wavelength,Mathf.Sin(dial.wavelength*Mathf.PI*2),1);
-        //         Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(new Dictionary<double,double>{
-        //             { dial.wavelength, 1.0 }
-        //         }, 0.8),true));
-        //         drawCircle(dial.pos + new Vector3(Mathf.Sin(a),Mathf.Cos(a),0)*radius, 0.1f, true, color);
-        //     }
-        // }
-
-        foreach (Dial dial in dials) {
-            GL.Begin(GL.LINE_STRIP);
-            Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(new Dictionary<double,double>{
-                { dial.wavelength, 1.0 }
-            }, 0.8),true));
-            GL.Color(color);
-            Dot lastDot = null;
-            for (int i = 0; i <= dial.dotCount; i++) {
-                Dot newDot = dial.dots[Utils.mod(i,dial.dotCount)];
-                if (lastDot != null) {
-                    Dictionary<double,double> wls = new Dictionary<double,double>();
-                    HashSet<Dial> common = new HashSet<Dial>(dotOwners[newDot]); 
-                    common.IntersectWith(dotOwners[lastDot]);
-                    foreach (Dial d0 in common) {
-                        wls[d0.wavelength] = 1.0;
-                    }
-                    color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(wls, 0.8),true));
-                    GL.Color(color);
-                    GL.Vertex3(lastDot.pos.x, lastDot.pos.y, lastDot.pos.z);
-                }
-                Vector3 pos = newDot.pos;
-                GL.Vertex3(pos.x, pos.y, pos.z);
-                lastDot = newDot;
-            }
-            GL.End();
+        GL.Begin(GL.LINE_STRIP);
+        GL.Color(new Color(1,1,1));
+        for (int i = 0; i < elevations.Length; i++) {
+            double x = ((double)(i - (elevations.Length/2.0))) / PX_PER_UNIT;
+            double y = elevations[i];
+            GL.Vertex3((float)x, (float)-10, 1);
+            GL.Vertex3((float)x, (float)y, 1);
         }
+        GL.End();
 
-        foreach (Dot dot in allDots) {
-            //Color color = new Color(dial.wavelength,1-dial.wavelength,Mathf.Sin(dial.wavelength*Mathf.PI*2),1);
-            Dictionary<double,double> wls = new Dictionary<double,double>();
-            foreach (double wl in dot.wavelengths) {
-                wls[wl] = 1f;
-            }
-            Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(wls, 0.8),true));
-            //Debug.Log("dot pos " + dot.pos);
-            drawCircle(dot.pos, 0.1f, true, color);
+        foreach (Tank tank in tanks) {
+            double x = ((double)(tank.x - (elevations.Length/2.0))) / PX_PER_UNIT;
+            double y = elevations[tank.x];
+            drawCircle(new Vector3((float)x, (float)y, 0), 0.1f, true, tank.color);
         }
-
-// Color debugging
-            // GL.Begin(GL.TRIANGLE_STRIP);
-            // for (int i = 0; i <= lineCount; ++i)
-            // {
-            //     float r = 2f;
-            //     float a = i / (float)lineCount;
-            //     Color color = StupidColors.RGBtoColor(StupidColors.CIEXYZtoRGB(StupidColors.spectrum_to_xyz(new Dictionary<double,double>{
-            //         { ((780.0-380.0)*a)+380.0, 1.0 }
-            //     }, 0.8),true));
-            //     GL.Color(color);
-            //     float angle = a * Mathf.PI * 2;
-            //     GL.Vertex3(0, 0, 0);
-            //     GL.Vertex3(Mathf.Cos(angle) * r, Mathf.Sin(angle) * r, 0);
-            // }
-            // GL.End();
 
         GL.PopMatrix();
     }
