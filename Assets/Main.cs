@@ -17,15 +17,16 @@ public class Main : MonoBehaviour
     private float[] elevations; // World units
 
     private Tank[] tanks;
+    private int currentPlayer;
 
     void Start()
     {
-        Init();
+        Init(3);
     }
  
-    private List<Color> predefTankColors = new List<Color> {Color.blue, Color.red, Color.green, Color.magenta};
+    private List<Color> predefTankColors = new List<Color> {Color.blue, Color.red, Color.green, Color.magenta, Color.yellow, Color.cyan};
 
-    void Init() {
+    void Init(int players) {
         elevations = new float[(int)(BOARD_WIDTH * PX_PER_UNIT)];
         
         // Gen terrain
@@ -36,7 +37,7 @@ public class Main : MonoBehaviour
             elevations[i] = elevations[i-1] + (Random.Range(min, max));
         }
 
-        tanks = new Tank[2];
+        tanks = new Tank[players];
         for (int i = 0; i < tanks.Length; i++) {
             Tank tank = new Tank();
             tank.x = Random.Range(0,elevations.Length);
@@ -44,6 +45,8 @@ public class Main : MonoBehaviour
             tanks[i] = tank;
         }
 
+        currentPlayer = tanks.Length-1;
+        advancePlayer();
         //TODO
     }
     
@@ -74,7 +77,19 @@ public class Main : MonoBehaviour
         if (Input.GetMouseButtonUp(0)) { // Left click (0-left,1-right,2-middle)
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             explode(new Vector2(ray.origin.x, ray.origin.y),0.5f);
+            advancePlayer();
         }
+    }
+
+    private void advancePlayer() {
+        int started = currentPlayer;
+        do {
+            currentPlayer = (currentPlayer + 1) % tanks.Length;
+            if (tanks[currentPlayer].alive) {
+                break;
+            }
+        } while (currentPlayer != started);
+        checkWin();
     }
 
     private void checkWin() {
@@ -93,8 +108,8 @@ public class Main : MonoBehaviour
             // Won
             Camera.main.backgroundColor = living.color;
         } else {
-            // Neither
-            Camera.main.backgroundColor = DEF_COLOR;
+            // Neither - use current player's color
+            Camera.main.backgroundColor = (tanks[currentPlayer].color + 2*Color.white)/4;
         }
     }
 
