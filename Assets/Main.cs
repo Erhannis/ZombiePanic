@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class Main : MonoBehaviour
 {
@@ -9,18 +10,21 @@ public class Main : MonoBehaviour
     //private List<GameObject> objs = new List<GameObject>();
     private System.Random rand = new System.Random();
 
-    private const int TARGET_FPS = 10;
+    private const int TARGET_FPS = 30;
 
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
     private const float TANK_RADIUS = 0.1f;
+    private const float SHELL_RADIUS = 0.02f;
     private const float HEAD_HEIGHT = 0.1f;
     private static Vector2 G = new Vector2(0, -9.8f)*0.1f;
+    private const float TIMESCALE = 1f;
 
     private Rect playBounds;
     private float[] elevations; // World units
 
     private Tank[] tanks;
+    private List<Shell> activeShells;
     private int currentPlayer;
 
     void Start()
@@ -51,6 +55,8 @@ public class Main : MonoBehaviour
             tanks[i] = tank;
         }
 
+        activeShells = new List<Shell>();
+
         currentPlayer = tanks.Length-1;
         advancePlayer();
         //TODO
@@ -80,6 +86,53 @@ public class Main : MonoBehaviour
         //     checkWin();
         // }
 
+        // Update shells
+        HashSet<Shell> shellsToRemove = new HashSet<Shell>();
+        foreach (Shell shell in activeShells) {
+            float speed = Mathf.Max(shell.v.magnitude,1f);
+            float dt = 1/(speed * PX_PER_UNIT);
+            float makeup = Time.deltaTime * TIMESCALE;
+            int count = ((int)(makeup / dt))+1;
+            dt = makeup/count;
+            for (int it = 0; it < count; it++) {
+                shell.p += shell.v*dt;
+                shell.v += G*dt;
+
+                if (!playBounds.Contains(shell.p)) {
+                    shellsToRemove.Add(shell);
+                    break;
+                }
+
+                int i = x2i(shell.p.x);
+                if (0 <= i && i < elevations.Length && shell.p.y <= elevations[i]) {
+                    // Hit!
+                    explode(shell.p,0.5f); //PARAM Explosion radius
+                    shellsToRemove.Add(shell);
+                    break;
+                }
+            }
+        }
+        bool hadShells = activeShells.Count > 0;
+        activeShells = activeShells.Except(shellsToRemove).ToList();
+        if (hadShells && activeShells.Count == 0) {
+            // Shells are done; next player's turn
+            advancePlayer();
+        }
+        
+
+        if (activeShells.Count > 0) {
+            // Don't allow interaction while shells are in play. ...*for now* >:)
+            return;
+        }
+
+        doPlayerInput();
+    }
+
+    private void doPlayerInput() {
+        if (!tanks[currentPlayer].alive) {
+            return;
+        }
+
         if (Input.GetMouseButtonUp(0)) { // Left click (0-left,1-right,2-middle)
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             int oi = tanks[currentPlayer].x;
@@ -89,28 +142,15 @@ public class Main : MonoBehaviour
             Vector2 origin = new Vector2(ox, oy);
             Vector2 tap = new Vector2(ray.origin.x, ray.origin.y);
 
-            Vector2 p = new Vector2(origin.x, origin.y);
-            Vector2 v = tap-origin;
-            float speed = Mathf.Max(v.magnitude,1f);
-            float dt = 1/(speed * PX_PER_UNIT);
-            while (true) {
-                p += v*dt;
-                v += G*dt;
+            Shell shell = new Shell();
+            shell.p = new Vector2(origin.x, origin.y);
+            shell.v = tap-origin;
+            shell.color = tanks[currentPlayer].color;
 
-                if (!playBounds.Contains(p)) {
-                    break;
-                }
+            activeShells.Add(shell);
 
-                int i = x2i(p.x);
-                if (0 <= i && i < elevations.Length && p.y <= elevations[i]) {
-                    // Hit!
-                    explode(p,0.5f); //PARAM Explosion radius
-                    break;
-                }
-            }
-            
-            //explode(ray.origin,0.5f);
-            advancePlayer();
+            // //explode(ray.origin,0.5f);
+            //advancePlayer();
         }
     }
 
@@ -253,6 +293,12 @@ public class Main : MonoBehaviour
         }
         GL.End();
 
+        // Shells
+        foreach (Shell shell in activeShells) {
+            drawCircle(new Vector3(shell.p.x, shell.p.y, 0.5f), SHELL_RADIUS, true, shell.color);
+        }
+
+        // Tanks
         foreach (Tank tank in tanks) {
             float x = i2x(tank.x);
             float y = elevations[tank.x];
