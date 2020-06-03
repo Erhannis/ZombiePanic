@@ -15,7 +15,7 @@ public class Main : MonoBehaviour
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
     private const float TANK_RADIUS = 0.1f;
-    private const float SHELL_RADIUS = 0.02f;
+    private const float SHELL_RADIUS = 0.05f;
     private const float HEAD_HEIGHT = 0.1f;
     private static Vector2 G = new Vector2(0, -9.8f)*0.1f;
     private const float TIMESCALE = 2f;
@@ -29,7 +29,7 @@ public class Main : MonoBehaviour
 
     void Start()
     {
-        Init(3);
+        Init(6);
     }
  
     private List<Color> predefTankColors = new List<Color> {Color.blue, Color.red, Color.green, Color.magenta, Color.yellow, Color.cyan};
@@ -145,7 +145,7 @@ public class Main : MonoBehaviour
             Shell shell = new Shell();
             shell.p = new Vector2(origin.x, origin.y);
             shell.v = tap-origin;
-            shell.color = tanks[currentPlayer].color;
+            shell.color = (tanks[currentPlayer].color+Color.white)/2;
 
             activeShells.Add(shell);
 
@@ -182,7 +182,7 @@ public class Main : MonoBehaviour
             Camera.main.backgroundColor = living.color;
         } else {
             // Neither - use current player's color
-            Camera.main.backgroundColor = (tanks[currentPlayer].color + 2*Color.white)/4;
+            Camera.main.backgroundColor = ((tanks[currentPlayer].color + 2*Color.white)/3)/3;
         }
     }
 
