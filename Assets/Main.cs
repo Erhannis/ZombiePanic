@@ -10,7 +10,7 @@ public class Main : MonoBehaviour
     //private List<GameObject> objs = new List<GameObject>();
     private System.Random rand = new System.Random();
 
-    private const int TARGET_FPS = 30;
+    private const int TARGET_FPS = 60;
 
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
@@ -38,12 +38,27 @@ public class Main : MonoBehaviour
         elevations = new float[(int)(BOARD_WIDTH * PX_PER_UNIT)];
         
         // Gen terrain
-        float min = -0.05f;
-        float max = 0.05f;
+        float min = -0.1f;
+        float max = 0.1f;
         elevations[0] = 0;
         for (int i = 1; i < elevations.Length; i++) {
             elevations[i] = elevations[i-1] + (Random.Range(min, max));
         }
+
+        // Smooth terrain
+        float[] newElevations = new float[elevations.Length];
+        int smoothingRadius = 4;
+        for (int i = smoothingRadius; i < elevations.Length-smoothingRadius; i++) {
+            float sum = elevations[i];
+            for (int j = 1; j <= smoothingRadius; j++) {
+                sum += elevations[i-j] + elevations[i+j];
+            }
+            newElevations[i] = sum/(smoothingRadius*2 + 1);
+        }
+        for (int i = 0; i < elevations.Length; i++) {
+            elevations[i] = newElevations[i];
+        }
+
 
         playBounds = new Rect(i2x(0),-10f,BOARD_WIDTH,200f); // Extra high, for high shots
 
@@ -78,7 +93,6 @@ public class Main : MonoBehaviour
             Application.targetFrameRate = TARGET_FPS;
         // var vertExtent = Camera.main.GetComponent<Camera>().orthographicSize;    
         // var horizExtent = vertExtent * Screen.width / Screen.height;
-        Debug.Log("Screen " + Screen.width + " x " + Screen.height);
         Camera.main.GetComponent<Camera>().orthographicSize = (0.5f * playBounds.width * Screen.height) / Screen.width;
 
 
@@ -99,6 +113,7 @@ public class Main : MonoBehaviour
             float makeup = Time.deltaTime * TIMESCALE;
             int count = ((int)(makeup / dt))+1;
             dt = makeup/count;
+            //Vector2 G = new Vector2(Input.acceleration.x, Input.acceleration.y)*0.5f; //TODO Param
             for (int it = 0; it < count; it++) {
                 shell.p += shell.v*dt;
                 shell.v += G*dt;
@@ -184,7 +199,7 @@ public class Main : MonoBehaviour
             Camera.main.backgroundColor = new Color(0,0,0);
         } else if (aliveCount == 1) {
             // Won
-            Camera.main.backgroundColor = living.color;
+            Camera.main.backgroundColor = living.color * 0.9f;
         } else {
             // Neither - use current player's color
             Camera.main.backgroundColor = ((tanks[currentPlayer].color + 2*Color.white)/3)/3;
