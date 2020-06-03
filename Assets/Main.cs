@@ -283,7 +283,7 @@ public class Main : MonoBehaviour
         GL.MultMatrix(transform.localToWorldMatrix);
 
         // Terrain
-        GL.Begin(GL.LINE_STRIP);
+        GL.Begin(GL.TRIANGLE_STRIP);
         GL.Color(new Color(1,1,1));
         for (int i = 0; i < elevations.Length; i++) {
             float x = i2x(i);
