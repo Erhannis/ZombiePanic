@@ -45,7 +45,7 @@ public class Main : MonoBehaviour
             elevations[i] = elevations[i-1] + (Random.Range(min, max));
         }
 
-        playBounds = new Rect(i2x(-1),-10f,i2x(elevations.Length)-i2x(-1),200f); // Extra high, for high shots
+        playBounds = new Rect(i2x(0),-10f,BOARD_WIDTH,200f); // Extra high, for high shots
 
         tanks = new Tank[players];
         for (int i = 0; i < tanks.Length; i++) {
@@ -76,6 +76,11 @@ public class Main : MonoBehaviour
     {
         if (Application.targetFrameRate != TARGET_FPS)
             Application.targetFrameRate = TARGET_FPS;
+        // var vertExtent = Camera.main.GetComponent<Camera>().orthographicSize;    
+        // var horizExtent = vertExtent * Screen.width / Screen.height;
+        Debug.Log("Screen " + Screen.width + " x " + Screen.height);
+        Camera.main.GetComponent<Camera>().orthographicSize = (0.5f * playBounds.width * Screen.height) / Screen.width;
+
 
         // if (Input.GetKeyDown(""+(i+1))) {
         //     turn(dials[i], !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)));
@@ -288,7 +293,7 @@ public class Main : MonoBehaviour
         for (int i = 0; i < elevations.Length; i++) {
             float x = i2x(i);
             float y = elevations[i];
-            GL.Vertex3(x, -10f, 1);
+            GL.Vertex3(x, -50f, 1);
             GL.Vertex3(x, y, 1);
         }
         GL.End();
