@@ -18,7 +18,7 @@ public class Main : MonoBehaviour
     private const float SHELL_RADIUS = 0.02f;
     private const float HEAD_HEIGHT = 0.1f;
     private static Vector2 G = new Vector2(0, -9.8f)*0.1f;
-    private const float TIMESCALE = 1f;
+    private const float TIMESCALE = 2f;
 
     private Rect playBounds;
     private float[] elevations; // World units
@@ -45,7 +45,7 @@ public class Main : MonoBehaviour
             elevations[i] = elevations[i-1] + (Random.Range(min, max));
         }
 
-        playBounds = new Rect(i2x(0),-10f,elevations.Length*PX_PER_UNIT,200f); // Extra high, for high shots
+        playBounds = new Rect(i2x(-1),-10f,i2x(elevations.Length)-i2x(-1),200f); // Extra high, for high shots
 
         tanks = new Tank[players];
         for (int i = 0; i < tanks.Length; i++) {
@@ -116,11 +116,11 @@ public class Main : MonoBehaviour
         activeShells = activeShells.Except(shellsToRemove).ToList();
         if (hadShells && activeShells.Count == 0) {
             // Shells are done; next player's turn
-            advancePlayer();
+            advancePlayer(); //PARAM
         }
         
 
-        if (activeShells.Count > 0) {
+        if (activeShells.Count > 0) { //PARAM
             // Don't allow interaction while shells are in play. ...*for now* >:)
             return;
         }
@@ -150,7 +150,7 @@ public class Main : MonoBehaviour
             activeShells.Add(shell);
 
             // //explode(ray.origin,0.5f);
-            //advancePlayer();
+            //advancePlayer(); //PARAM
         }
     }
 
