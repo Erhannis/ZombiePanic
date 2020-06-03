@@ -29,7 +29,7 @@ public class Main : MonoBehaviour
 
     void Start()
     {
-        Init(6);
+        Init(2); //PARAM
     }
  
     private List<Color> predefTankColors = new List<Color> {Color.blue, Color.red, Color.green, Color.magenta, Color.yellow, Color.cyan};
