@@ -26,16 +26,20 @@ public class Main : MonoBehaviour
     private Tank[] tanks;
     private List<Shell> activeShells;
     private int currentPlayer;
+    private bool rapidfire;
 
     void Start()
     {
-        Init(2); //PARAM
+        int playerCount = (int)(float)SceneChanger.globals["playercount_float"];
+        bool rapidfire = (bool)SceneChanger.globals["rapidfire_bool"];
+        Init(playerCount, rapidfire);
     }
  
     private List<Color> predefTankColors = new List<Color> {Color.blue, Color.red, Color.green, Color.magenta, Color.yellow, Color.cyan};
 
-    void Init(int players) {
+    void Init(int players, bool rapidfire) {
         elevations = new float[(int)(BOARD_WIDTH * PX_PER_UNIT)];
+        this.rapidfire = rapidfire;
         
         // Gen terrain
         float min = -0.1f;
@@ -60,7 +64,7 @@ public class Main : MonoBehaviour
         }
 
 
-        playBounds = new Rect(i2x(0),-10f,BOARD_WIDTH,200f); // Extra high, for high shots
+        playBounds = new Rect(i2x(0),-50f,BOARD_WIDTH,200f); // Extra high, for high shots
 
         tanks = new Tank[players];
         for (int i = 0; i < tanks.Length; i++) {
@@ -134,14 +138,14 @@ public class Main : MonoBehaviour
         }
         bool hadShells = activeShells.Count > 0;
         activeShells = activeShells.Except(shellsToRemove).ToList();
-        if (hadShells && activeShells.Count == 0) {
+        if (hadShells && activeShells.Count == 0 && !rapidfire) {
             // Shells are done; next player's turn
             advancePlayer(); //PARAM
         }
         
 
-        if (activeShells.Count > 0) { //PARAM
-            // Don't allow interaction while shells are in play. ...*for now* >:)
+        if (activeShells.Count > 0 && !rapidfire) {
+            // Don't allow interaction while shells are in play.
             return;
         }
 
@@ -170,7 +174,9 @@ public class Main : MonoBehaviour
             activeShells.Add(shell);
 
             // //explode(ray.origin,0.5f);
-            //advancePlayer(); //PARAM
+            if (rapidfire) {
+                advancePlayer();
+            }
         }
     }
 
