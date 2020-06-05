@@ -8,6 +8,10 @@ public class SceneChanger : MonoBehaviour
     public static Dictionary<string, object> globals = new Dictionary<string, object>();
 
     public void loadScene(string scene) {
+        SceneChanger.staticLoadScene(scene);
+    }
+
+    public static void staticLoadScene(string scene) {
         SceneManager.LoadScene(scene);
     }
 

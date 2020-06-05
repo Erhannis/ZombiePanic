@@ -99,6 +99,14 @@ public class Main : MonoBehaviour
         // var horizExtent = vertExtent * Screen.width / Screen.height;
         Camera.main.GetComponent<Camera>().orthographicSize = (0.5f * playBounds.width * Screen.height) / Screen.width;
 
+        if (Input.GetKeyDown("r")) {
+            Init(tanks.Length, rapidfire);
+            return;
+        }
+        if (Input.GetKeyDown("q")) {
+            SceneChanger.staticLoadScene("MainMenu");
+            return;
+        }
 
         // if (Input.GetKeyDown(""+(i+1))) {
         //     turn(dials[i], !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)));
