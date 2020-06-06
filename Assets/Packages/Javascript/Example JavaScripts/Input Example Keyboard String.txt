@@ -1,0 +1,18 @@
+//Example using the exposed UnityEngine.Input
+//class and JS string functions. (length & substr)
+
+//Make sure the focus is on the Game and type something.
+
+kb = Input.inputString;
+if (kb != "")
+{
+	text = GetText();
+	text += kb;
+	ln = text.length;
+	//truncate text if its longer than 10 chars.
+	if (ln > 10)
+	{
+		text = text.substr(ln - 10);
+	}
+	SetText(text);
+}

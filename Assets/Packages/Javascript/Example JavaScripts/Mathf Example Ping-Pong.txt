@@ -1,0 +1,7 @@
+//Example using PingPong() method of the
+//exposed UnityEngine.Mathf class
+
+x = Mathf.PingPong(time, 4) - 2;
+y = Mathf.PingPong(time, 0.5) * 2;
+z = 0;
+SetPos(x * 5, y * 3, z * 5);

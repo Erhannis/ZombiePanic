@@ -1,0 +1,7 @@
+//Bounce in a circle.
+//Simple example using methods of the JS Math class.
+
+x = Math.sin(time);
+z = Math.cos(time);
+y = Math.abs(Math.sin(time * 5));
+SetPos(x * 10, y * 5, z * 10);

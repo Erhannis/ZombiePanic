@@ -1,0 +1,22 @@
+//Example using the exposed UnityEngine.Input
+//class with control axis.
+
+//Use arrow keys or joystick to move the sphere.
+//Don't fall off the edge.
+
+pos = GetPos();
+pos.x += Input.GetAxis("Horizontal") * 0.3;
+pos.z += Input.GetAxis("Vertical") * 0.3;
+
+if (Math.abs(pos.x) > 15 || Math.abs(pos.z) > 15)
+{
+	pos.Reset();
+	SetText("I said don't fall off!");
+}
+
+SetPosVec(pos);
+
+if (Math.abs(pos.x) > 2.5 || Math.abs(pos.z) > 2.5)
+{ 
+	SetText("");
+}

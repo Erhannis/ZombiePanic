@@ -1,0 +1,27 @@
+//Same as the Input Axis example but with a jump
+//button added just for fun.
+
+//Use arrow keys or joystick to move the sphere.
+//Press "Fire1" or Ctrl key to jump.
+
+pos = GetPos();
+pos.x += Input.GetAxis("Horizontal") * 0.3;
+pos.z += Input.GetAxis("Vertical") * 0.3;
+
+text = GetText();
+if (text == "")
+{
+	if (Input.GetButton("Fire1")) SetText(time);
+}
+else //text != ""
+{
+	//This is how you must cast strings to numbers in JS
+	t = parseFloat(text);
+	pos.y = Math.sin((time - t) * 2) * 5;
+	if (pos.y <= 0) SetText("");
+}
+
+if (Math.abs(pos.x) > 15 || Math.abs(pos.z) > 15)
+{ pos.Reset(); }
+
+SetPosVec(pos);

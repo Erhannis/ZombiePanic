@@ -1,0 +1,13 @@
+//Example using the exposed UnityEngine.Input class
+//to demonstrate our custom static Days class
+
+//Use left/right arrows to cycle through days.
+
+if (Input.GetKey("right"))
+{
+	SetText(Days.Next());
+}
+else if (Input.GetKey("left"))
+{
+	SetText(Days.Prev());
+}

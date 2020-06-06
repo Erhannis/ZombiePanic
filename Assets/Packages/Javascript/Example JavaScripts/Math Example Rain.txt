@@ -1,0 +1,14 @@
+//Simple JS Math example with conditional.
+
+if (GetY() < 0)
+{
+	x = Math.random() * 20 - 10;
+	z = Math.random() * 20 - 10;
+	SetPos(x, 10, z);
+}
+else
+{
+	p = GetPos();
+	p.y = p.y - 0.5;
+	SetPosVec(p);
+}

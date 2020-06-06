@@ -1,0 +1,15 @@
+//Example using the exposed UnityEngine.Input
+//class with control axis from mouse.
+
+//Move the mouse to move the sphere
+
+pos = GetPos();
+pos.x += Input.GetAxis("Mouse X") * 0.3;
+pos.z += Input.GetAxis("Mouse Y") * 0.3;
+
+//If it goes off the table put it back in the middle.
+if (Math.abs(pos.x) > 15 || Math.abs(pos.z) > 15)
+{ pos.Reset(); }
+
+SetPosVec(pos);
+
