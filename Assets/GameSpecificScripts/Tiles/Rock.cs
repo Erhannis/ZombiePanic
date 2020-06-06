@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Tiles {
+namespace Entities {
 public class Rock : Tile
 {
     public Rock(Pos3 pos) : base(pos) {

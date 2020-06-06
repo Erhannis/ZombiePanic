@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Tiles;
+using Entities;
 
 /**
     Infinite 3D world.  Centered at 0,0,0.

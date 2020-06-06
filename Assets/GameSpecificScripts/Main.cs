@@ -45,9 +45,6 @@ public class Main : MonoBehaviour
     {
         if (Application.targetFrameRate != TARGET_FPS)
             Application.targetFrameRate = TARGET_FPS;
-        // var vertExtent = Camera.main.GetComponent<Camera>().orthographicSize;    
-        // var horizExtent = vertExtent * Screen.width / Screen.height;
-        //TODO Scaling
         //Camera.main.GetComponent<Camera>().orthographicSize = (0.5f * playBounds.width * Screen.height) / Screen.width;
 
         Camera.main.backgroundColor = new Color(0,0,0); //TODO Move elsewhere?
@@ -142,6 +139,9 @@ public class Main : MonoBehaviour
     // Will be called after all regular rendering is done
     public void OnRenderObject()
     {
+        var vertExtent = Camera.main.GetComponent<Camera>().orthographicSize;    
+        var horizExtent = vertExtent * Screen.width / Screen.height;
+
         CreateLineMaterial();
         // Apply the line material
         lineMaterial.SetPass(0);
@@ -152,7 +152,7 @@ public class Main : MonoBehaviour
         GL.MultMatrix(transform.localToWorldMatrix);
 
         Pos3 center = playerPos.toPos3();
-        Pos3 visionRadius = new Pos3(10,10,2); //TODO //PARAM
+        Pos3 visionRadius = new Pos3(((long)(horizExtent))+1,((long)(vertExtent))+1,2); //TODO //PARAM z vision
         world.render(center, center - visionRadius, center + visionRadius);
 
         GL.PopMatrix();
