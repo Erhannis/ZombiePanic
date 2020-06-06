@@ -14,7 +14,14 @@ public class World
     public Dictionary<Pos3, Tile> tiles = new Dictionary<Pos3, Tile>();
 
     public Tile genTile(Pos3 pos) {
-        return new Rock(pos); //TODO Make better world, haha
+        //TODO Make better world, haha
+
+        if (Random.Range(0,6) == 0) { //TODO Use a seed or something
+        //if (pos.x == pos.z) {
+            return new Rock(pos);
+        } else {
+            return new Air(pos);
+        }
     }
 
     public Tile getTile(Pos3 pos) {
@@ -28,6 +35,7 @@ public class World
 
     public void render(Pos3 center, Pos3 downWestSouth, Pos3 upEastNorth) {
         //TODO Scale?
+        Debug.Log("world render " + center + " " + downWestSouth + "->" + upEastNorth);
         for (long z = downWestSouth.z; z <= upEastNorth.z; z++) {
             for (long y = downWestSouth.y; y <= upEastNorth.y; y++) {
                 for (long x = downWestSouth.x; x <= upEastNorth.x; x++) {

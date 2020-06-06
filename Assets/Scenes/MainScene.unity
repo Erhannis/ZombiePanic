@@ -262,7 +262,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8fda00b6c03e8d4e8ac8927aef0db53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pool: {fileID: 1600573269}
 --- !u!114 &1600573269
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -275,9 +274,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cafeb60168da364aaeb01d2e57b7331, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectPrefabs:
-  - {fileID: 7583253076366549050, guid: 3827db7e18f3d95418ada6c585742fc9, type: 3}
-  - {fileID: 5874059184493936918, guid: ef33c9f7c4cfb4245bcf956abb3b132f, type: 3}
+  objectPrefabs: []
   amountToBuffer: 
   defaultBufferAmount: 3
 --- !u!114 &1600573270

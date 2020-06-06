@@ -22,7 +22,7 @@ public class Pos3
     public static Pos3 operator -(Pos3 a) => new Pos3(-a.x, -a.y, -a.z);
 
     public static Pos3 operator +(Pos3 a, Pos3 b)
-        => new Pos3(a.x * b.x, a.y * b.y, a.z * b.z);
+        => new Pos3(a.x + b.x, a.y + b.y, a.z + b.z);
 
     public static Pos3 operator -(Pos3 a, Pos3 b)
         => a + (-b);

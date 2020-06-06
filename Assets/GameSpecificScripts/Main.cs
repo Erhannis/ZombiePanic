@@ -50,6 +50,8 @@ public class Main : MonoBehaviour
         //TODO Scaling
         //Camera.main.GetComponent<Camera>().orthographicSize = (0.5f * playBounds.width * Screen.height) / Screen.width;
 
+        Camera.main.backgroundColor = new Color(0,0,0); //TODO Move elsewhere?
+
         Debug.Log("//TODO Remove reset key");
         if (Input.GetKeyDown("r")) {
             Init();
@@ -77,7 +79,9 @@ public class Main : MonoBehaviour
 
     private bool tryMovePlayer(MPos3 dir) {
         //TODO Test or something
+        Debug.LogWarning("playerPos " + playerPos + " + " + dir + " = " + (playerPos + dir));
         playerPos = playerPos + dir;
+        Debug.LogWarning(" = playerPos " + playerPos);
         return true;
     }
 
@@ -106,7 +110,7 @@ public class Main : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) {
             dir.z--;
         }
-        if (dir != new MPos3(0,0,0)) {
+        if (!dir.Equals(new MPos3(0,0,0))) {
             if (tryMovePlayer(dir)) {
 
             } else {
@@ -148,7 +152,7 @@ public class Main : MonoBehaviour
         GL.MultMatrix(transform.localToWorldMatrix);
 
         Pos3 center = playerPos.toPos3();
-        Pos3 visionRadius = new Pos3(10,10,1);
+        Pos3 visionRadius = new Pos3(10,10,2); //TODO //PARAM
         world.render(center, center - visionRadius, center + visionRadius);
 
         GL.PopMatrix();

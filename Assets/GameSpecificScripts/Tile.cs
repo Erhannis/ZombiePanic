@@ -13,17 +13,18 @@ public class Tile
         this.pos = pos; //TODO readonly?  setter?  updates?
     }
 
-    public void render(Pos3 center) {
+    public virtual void render(Pos3 center) {
         //TODO BG or something?
     }
 
     public Color warpColor(Pos3 center, Color color) { //TODO Maybe a shader?
-        if (pos.z > center.z) {
-            return (color + Color.white)/2;
-        } else if (pos.z < center.z) {
-            return (color + Color.black)/2;
-        } else {
-            return color;
-        }
+        return color;
+        // if (pos.z > center.z) {
+        //     return (color + Color.white)/2;
+        // } else if (pos.z < center.z) {
+        //     return (color + Color.black)/2;
+        // } else {
+        //     return color;
+        // }
     }
 }

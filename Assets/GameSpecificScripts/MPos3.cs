@@ -20,7 +20,7 @@ public class MPos3 {
     public static MPos3 operator -(MPos3 a) => new MPos3(-a.x, -a.y, -a.z);
 
     public static MPos3 operator +(MPos3 a, MPos3 b)
-        => new MPos3(a.x * b.x, a.y * b.y, a.z * b.z);
+        => new MPos3(a.x + b.x, a.y + b.y, a.z + b.z);
 
     public static MPos3 operator -(MPos3 a, MPos3 b)
         => a + (-b);
