@@ -3,23 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Entities {
-public class Air : Tile
+public class Air : Entity
 {
-    public Air(Pos3 pos) : base(pos) {
+    public Air() {
     }
 
-    override public void render(Pos3 center) {
-        base.render(center);
+    override protected void renderEntity() {
         //TODO *Could* do depth shading by making air slightly visible
         GL.Begin(GL.QUADS);
         GL.Color(ColorScheme.AIR);
-        float ox = (float)(pos.x - center.x);
-        float oy = (float)(pos.y - center.y);
-        float oz = (float)(pos.z - center.z);
-        GL.Vertex3(ox-0.5f, oy-0.5f, oz);
-        GL.Vertex3(ox+0.5f, oy-0.5f, oz);
-        GL.Vertex3(ox+0.5f, oy+0.5f, oz);
-        GL.Vertex3(ox-0.5f, oy+0.5f, oz);
+        vertex3(-0.5f, -0.5f, 0);
+        vertex3(+0.5f, -0.5f, 0);
+        vertex3(+0.5f, +0.5f, 0);
+        vertex3(-0.5f, +0.5f, 0);
         GL.End();
     }
 }

@@ -3,22 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Entities {
-public class Rock : Tile
+public class Rock : Entity
 {
-    public Rock(Pos3 pos) : base(pos) {
+    public Rock() {
     }
 
-    override public void render(Pos3 center) {
-        base.render(center);
+    override protected void renderEntity() {
         GL.Begin(GL.QUADS);
-        GL.Color(warpColor(center, ColorScheme.ROCK));
-        float ox = (float)(pos.x - center.x);
-        float oy = (float)(pos.y - center.y);
-        float oz = (float)(pos.z - center.z);
-        GL.Vertex3(ox-0.5f, oy-0.5f, oz);
-        GL.Vertex3(ox+0.5f, oy-0.5f, oz);
-        GL.Vertex3(ox+0.5f, oy+0.5f, oz);
-        GL.Vertex3(ox-0.5f, oy+0.5f, oz);
+        GL.Color(ColorScheme.ROCK);
+        vertex3(-0.5f, -0.5f, 0);
+        vertex3(+0.5f, -0.5f, 0);
+        vertex3(+0.5f, +0.5f, 0);
+        vertex3(-0.5f, +0.5f, 0);
         GL.End();
     }
 }

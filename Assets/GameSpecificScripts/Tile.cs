@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Entities;
 
 /**
     Tiles are 1 unit wide, from [-0.5,-0.5]to(0.5,0.5).  Not gonna think about inclusivity directly until it clearly matters.
@@ -8,13 +9,22 @@ using UnityEngine;
 public class Tile
 {
     public Pos3 pos;
+    public List<Entity> contents = new List<Entity>();
 
-    public Tile(Pos3 pos) {
+    public Tile(Pos3 pos, Entity[] contents) {
         this.pos = pos; //TODO readonly?  setter?  updates?
+        this.contents.AddRange(contents);
     }
 
-    public virtual void render(Pos3 center) {
+    public void render(Pos3 center) {
         //TODO BG or something?
+        Pos3 o = pos - center;
+        float oz = 0;
+        float dz = 0.2f / (contents.Count+1);
+        foreach (Entity entity in contents) {
+            entity.render(new Vector3(o.x,o.y,o.z+dz));
+            oz += dz;
+        }
     }
 
     public Color warpColor(Pos3 center, Color color) { //TODO Maybe a shader?

@@ -18,9 +18,9 @@ public class World
 
         if (Random.Range(0,6) == 0) { //TODO Use a seed or something
         //if (pos.x == pos.z) {
-            return new Rock(pos);
+            return new Tile(pos, new Entity[]{new Rock()});
         } else {
-            return new Air(pos);
+            return new Tile(pos, new Entity[]{new Air()});
         }
     }
 
