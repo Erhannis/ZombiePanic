@@ -1,0 +1,7 @@
+Ok, so.  Of the things contained in this project, I hereby release my own work under the following terms.  You may use it for personal use however you wish.  (I am legally incapable of authorizing you to do anything illegal with it, of course.)  If you wish to use it for commercial purposes, it must be a recognizably different product, and its origins be attributed somewhere the end-user is easily able to see, should they desire to do so.  For instance, I would accept as "recognizably different": the name is noticeably different, and it must contain at least one new feature that is substantially useful or interesting.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+It would be nice if you released your own code under similar terms, but I will not require this.
+
+-Erhannis Kirran
