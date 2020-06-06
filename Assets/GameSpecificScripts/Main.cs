@@ -179,7 +179,18 @@ public class Main : MonoBehaviour
                     return false;
                 }
             case ActionMode.PLACE:
-                return false;
+                foreach (Entity e in newTile.contents) {
+                    if (e.blocksMovement()) {
+                        return false;
+                    }
+                }
+                if (player.inventory.Count == 0) {
+                    return false;
+                }
+                Entity placed = player.inventory[player.inventory.Count-1];
+                player.inventory.RemoveAt(player.inventory.Count-1);
+                newTile.contents.Add(placed);
+                return true;
             default:
                 return false;
         }
