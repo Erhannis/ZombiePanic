@@ -6,6 +6,13 @@ using Entities;
 
 public class Main : MonoBehaviour
 {
+    private enum ActionMode {
+        MOVE,
+        DIG,
+        AUTODIG,
+        PLACE //TODO Differentiate between block types
+    }
+
     private System.Random rand = new System.Random();
 
     private const int TARGET_FPS = 60;
@@ -20,6 +27,8 @@ public class Main : MonoBehaviour
     private MPos3 playerPos; //TODO Note - player needs an avatar in-world
     private Broodmother player;
 
+    private ActionMode actionMode;
+
     void Start()
     {
         // int playerCount = (int)(float)SceneChanger.globals["playercount_float"];
@@ -33,6 +42,7 @@ public class Main : MonoBehaviour
         world = new World();
         playerPos = new MPos3(0,0,0);
         player = new Broodmother();
+        actionMode = ActionMode.MOVE;
         world.getTile(playerPos.toPos3()).contents.Add(player);
         
         // playBounds = new Rect(i2x(0),-50f,BOARD_WIDTH,200f); // Extra high, for high shots
@@ -78,33 +88,25 @@ public class Main : MonoBehaviour
         doPlayerInput();
     }
 
-    private bool tryMovePlayer(MPos3 dir) {
-        //TODO Test or something
-        //TODO Should maybe have a world.moveEntity() or something
-        MPos3 newMPos = playerPos + dir;
-        Pos3 newPos = newMPos.toPos3();
-        bool block = false;
-        foreach (Entity e in world.getTile(newPos).contents) {
-            if (e.blocksMovement()) {
-                block = true;
-                break;
-            }
-        }
-        if (block) {
-            return false;
-        }
-
-        world.getTile(playerPos.toPos3()).contents.Remove(player);
-        playerPos = newMPos;
-        world.getTile(newPos).contents.Add(player);
-        return true;
-    }
-
     private void doPlayerInput() {
         // if (Input.GetMouseButtonUp(0)) { // Left click (0-left,1-right,2-middle)
         //     var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         //     Vector2 tap = new Vector2(ray.origin.x, ray.origin.y);
         // }
+
+        if (Input.GetKeyDown("d")) {
+            actionMode = ActionMode.DIG;
+        }
+        if (Input.GetKeyDown("a")) {
+            actionMode = ActionMode.AUTODIG;
+        }
+        if (Input.GetKeyDown("m")) {
+            actionMode = ActionMode.MOVE;
+        }
+        if (Input.GetKeyDown("p")) {
+            actionMode = ActionMode.PLACE;
+        }
+
 
         MPos3 dir = new MPos3(0,0,0);
         if (Input.GetKeyDown(KeyCode.RightArrow)) {
@@ -126,11 +128,60 @@ public class Main : MonoBehaviour
             dir.z--;
         }
         if (!dir.Equals(new MPos3(0,0,0))) {
-            if (tryMovePlayer(dir)) {
-
+            if (tryPlayerAction(dir, actionMode)) {
+                // Did the thing
             } else {
+                if (actionMode == ActionMode.AUTODIG) {
+                    // AUTODIG failed to move in a direction
+                    if (tryPlayerAction(dir, ActionMode.DIG)) {
+                        // Dug
+                    } else {
+                        // Couldn't dig; wasn't able to move. ...???
+                    }
+                }
                 // Play bump sound?
             }
+        }
+    }
+
+    private bool tryPlayerAction(MPos3 dir, ActionMode mode) {
+        //TODO Test or something
+        //TODO Should maybe have a world.moveEntity() or something
+        MPos3 newMPos = playerPos + dir;
+        Pos3 newPos = newMPos.toPos3();
+        Tile newTile = world.getTile(newPos);
+
+        switch (mode) {
+            case ActionMode.AUTODIG: // AUTODIG defaults first to movement
+            case ActionMode.MOVE:
+                foreach (Entity e in newTile.contents) {
+                    if (e.blocksMovement()) {
+                        return false;
+                    }
+                }
+                world.getTile(playerPos.toPos3()).contents.Remove(player);
+                playerPos = newMPos;
+                newTile.contents.Add(player);
+                return true;
+            case ActionMode.DIG:
+                Entity digged = null;
+                foreach (Entity e in newTile.contents) {
+                    if (e.blocksMovement()) {
+                        digged = e;
+                        break;
+                    }
+                }
+                if (digged != null) {
+                    newTile.contents.Remove(digged);
+                    player.inventory.Add(digged);
+                    return true;
+                } else {
+                    return false;
+                }
+            case ActionMode.PLACE:
+                return false;
+            default:
+                return false;
         }
     }
 
