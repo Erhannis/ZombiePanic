@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using Entities;
 
 public class Main : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class Main : MonoBehaviour
     private Rect playBounds; //TODO ????
 
     private MPos3 playerPos; //TODO Note - player needs an avatar in-world
-    private Entities.Broodmother player;
+    private Broodmother player;
 
     void Start()
     {
@@ -31,7 +32,7 @@ public class Main : MonoBehaviour
     void Init() {
         world = new World();
         playerPos = new MPos3(0,0,0);
-        player = new Entities.Broodmother();
+        player = new Broodmother();
         world.getTile(playerPos.toPos3()).contents.Add(player);
         
         // playBounds = new Rect(i2x(0),-50f,BOARD_WIDTH,200f); // Extra high, for high shots
@@ -80,9 +81,22 @@ public class Main : MonoBehaviour
     private bool tryMovePlayer(MPos3 dir) {
         //TODO Test or something
         //TODO Should maybe have a world.moveEntity() or something
+        MPos3 newMPos = playerPos + dir;
+        Pos3 newPos = newMPos.toPos3();
+        bool block = false;
+        foreach (Entity e in world.getTile(newPos).contents) {
+            if (e.blocksMovement()) {
+                block = true;
+                break;
+            }
+        }
+        if (block) {
+            return false;
+        }
+
         world.getTile(playerPos.toPos3()).contents.Remove(player);
-        playerPos = playerPos + dir;
-        world.getTile(playerPos.toPos3()).contents.Add(player);
+        playerPos = newMPos;
+        world.getTile(newPos).contents.Add(player);
         return true;
     }
 

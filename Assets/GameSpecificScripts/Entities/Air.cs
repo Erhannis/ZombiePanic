@@ -18,5 +18,9 @@ public class Air : Entity
         vertex3(-0.5f, +0.5f, 0);
         GL.End();
     }
+
+    override public bool blocksMovement() {
+        return false;
+    }
 }
 }

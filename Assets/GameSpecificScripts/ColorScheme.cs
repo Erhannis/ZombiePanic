@@ -9,6 +9,7 @@ public class ColorScheme {
     private static Color intRGB(float r, float g, float b) {
         return new Color(r/255,g/255,b/255);
     }
+    
     private static Color intRGBA(float r, float g, float b, float a) {
         return new Color(r/255,g/255,b/255,a/255);
     }

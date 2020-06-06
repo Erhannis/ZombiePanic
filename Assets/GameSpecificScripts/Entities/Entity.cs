@@ -12,6 +12,7 @@ public abstract class Entity {
     }
 
     protected abstract void renderEntity();
+    public abstract bool blocksMovement();
 
     /**
         Must only be called when render() is further root-ward in the stack.
