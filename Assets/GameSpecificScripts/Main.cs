@@ -63,15 +63,15 @@ public class Main : MonoBehaviour
 
         Camera.main.backgroundColor = new Color(0,0,0); //TODO Move elsewhere?
 
-        Debug.Log("//TODO Remove reset key");
+        //Debug.Log("//TODO Remove reset key");
         if (Input.GetKeyDown("r")) {
             Init();
             return;
         }
-        if (Input.GetKeyDown("q")) {
-            SceneChanger.staticLoadScene("MainMenu");
-            return;
-        }
+        // if (Input.GetKeyDown("q")) {
+        //     SceneChanger.staticLoadScene("MainMenu");
+        //     return;
+        // }
 
 
         // if (Input.GetKeyDown(""+(i+1))) {
@@ -128,18 +128,26 @@ public class Main : MonoBehaviour
             dir.z--;
         }
         if (!dir.Equals(new MPos3(0,0,0))) {
-            if (tryPlayerAction(dir, actionMode)) {
-                // Did the thing
-            } else {
-                if (actionMode == ActionMode.AUTODIG) {
-                    // AUTODIG failed to move in a direction
-                    if (tryPlayerAction(dir, ActionMode.DIG)) {
-                        // Dug
-                    } else {
-                        // Couldn't dig; wasn't able to move. ...???
-                    }
+            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) {
+                if (tryPlayerAction(dir, ActionMode.PLACE)) {
+                    // Placed
+                } else {
+                    // Failed to place
                 }
-                // Play bump sound?
+            } else {
+                if (tryPlayerAction(dir, actionMode)) {
+                    // Did the thing
+                } else {
+                    if (actionMode == ActionMode.AUTODIG) {
+                        // AUTODIG failed to move in a direction
+                        if (tryPlayerAction(dir, ActionMode.DIG)) {
+                            // Dug
+                        } else {
+                            // Couldn't dig; wasn't able to move. ...???
+                        }
+                    }
+                    // Play bump sound?
+                }
             }
         }
     }
