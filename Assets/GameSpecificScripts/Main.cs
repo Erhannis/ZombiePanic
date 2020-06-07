@@ -27,6 +27,13 @@ public class Main : MonoBehaviour
     private MPos3 playerPos; //TODO Note - player needs an avatar in-world
     private Broodmother player;
 
+    private bool uiDigBtnDown = false;
+    private bool uiPlaceBtnDown = false;
+    private bool uiUpBtnDown = false;
+    private bool uiDownBtnDown = false;
+    private bool pendingUp = false;
+    private bool pendingDown = false;
+
     private ActionMode actionMode;
 
     void Start()
@@ -88,12 +95,71 @@ public class Main : MonoBehaviour
         doPlayerInput();
     }
 
-    private void doPlayerInput() {
-        // if (Input.GetMouseButtonUp(0)) { // Left click (0-left,1-right,2-middle)
-        //     var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        //     Vector2 tap = new Vector2(ray.origin.x, ray.origin.y);
-        // }
+    private MPos3 checkInputDir(Vector3 cursorPos) {
+        MPos3 dir = new MPos3(0,0,0);
+        var ray = Camera.main.ScreenPointToRay(cursorPos);
+        Vector2 tap = new Vector2(ray.origin.x, ray.origin.y).normalized;
+        RaycastHit hit;
+        Physics.Raycast(ray.origin, Vector3.forward, out hit);
+        if (hit.transform == null) {
+            // Didn't hit any of the UI button colliders
 
+            List<Vector2> dirs = new List<Vector2>{
+                new Vector2(0,1).normalized,
+                new Vector2(1,1).normalized,
+                new Vector2(1,0).normalized,                
+                new Vector2(1,-1).normalized,                
+                new Vector2(0,-1).normalized,                
+                new Vector2(-1,-1).normalized,
+                new Vector2(-1,0).normalized,
+                new Vector2(-1,1).normalized
+            };
+            int mi = 0;
+            float md = float.PositiveInfinity;
+            for (int i = 0; i < 8; i++) {
+                Vector2 v = tap-dirs[i];
+                if (v.magnitude < md) {
+                    mi = i;
+                    md = v.magnitude;
+                }
+            }
+            switch (mi) {
+                case 0:
+                    dir.y++;
+                    break;
+                case 1:
+                    dir.x++;
+                    dir.y++;
+                    break;
+                case 2:
+                    dir.x++;
+                    break;
+                case 3:
+                    dir.x++;
+                    dir.y--;
+                    break;
+                case 4:
+                    dir.y--;
+                    break;
+                case 5:
+                    dir.x--;
+                    dir.y--;
+                    break;
+                case 6:
+                    dir.x--;
+                    break;
+                case 7:
+                    dir.x--;
+                    dir.y++;
+                    break;
+            }
+            return dir;
+        } else {
+            return null;
+        }
+    }
+
+    private void doPlayerInput() {
         if (Input.GetKeyDown("d")) {
             actionMode = ActionMode.DIG;
         }
@@ -107,32 +173,70 @@ public class Main : MonoBehaviour
             actionMode = ActionMode.PLACE;
         }
 
-
         MPos3 dir = new MPos3(0,0,0);
-        if (Input.GetKeyDown(KeyCode.RightArrow)) {
-            dir.x++;
+        bool foundMov = false;
+
+        if (!foundMov) {
+            foreach (Touch touch in Input.touches) {
+                if (touch.phase == TouchPhase.Began) {
+                    MPos3 idir = checkInputDir(touch.position);
+                    if (idir != null) {
+                        dir += idir;
+                        foundMov = true;
+                    }
+                    break;
+                }
+            }
         }
-        if (Input.GetKeyDown(KeyCode.LeftArrow)) {
-            dir.x--;
+
+        if (!foundMov && Input.GetMouseButtonDown(0) && !(uiUpBtnDown || uiDownBtnDown)) { // Left click (0-left,1-right,2-middle)
+            MPos3 idir = checkInputDir(Input.mousePosition);
+            if (idir != null) {
+                dir += idir;
+                foundMov = true;
+            }
         }
-        if (Input.GetKeyDown(KeyCode.UpArrow)) {
-            dir.y++;
+
+        if (dir.Equals(new MPos3(0,0,0))) {
+            if (Input.GetKeyDown(KeyCode.RightArrow)) {
+                dir.x++;
+            }
+            if (Input.GetKeyDown(KeyCode.LeftArrow)) {
+                dir.x--;
+            }
+            if (Input.GetKeyDown(KeyCode.UpArrow)) {
+                dir.y++;
+            }
+            if (Input.GetKeyDown(KeyCode.DownArrow)) {
+                dir.y--;
+            }
+            if (Input.GetKeyDown(KeyCode.Space) || pendingUp) {
+                dir.z++;
+            }
+            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift) || pendingDown) {
+                dir.z--;
+            }
+            if (!dir.Equals(new MPos3(0,0,0))) {
+                foundMov = true;
+            }
         }
-        if (Input.GetKeyDown(KeyCode.DownArrow)) {
-            dir.y--;
-        }
-        if (Input.GetKeyDown(KeyCode.Space)) {
-            dir.z++;
-        }
-        if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) {
-            dir.z--;
-        }
-        if (!dir.Equals(new MPos3(0,0,0))) {
-            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) {
+
+        pendingUp = false;
+        pendingDown = false;
+
+        //TODO Should probably organize this better
+        if (foundMov) {
+            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) || uiPlaceBtnDown) {
                 if (tryPlayerAction(dir, ActionMode.PLACE)) {
                     // Placed
                 } else {
                     // Failed to place
+                }
+            } else if (uiDigBtnDown) {
+                if (tryPlayerAction(dir, ActionMode.DIG)) {
+                    // Dug
+                } else {
+                    // Couldn't dig; wasn't able to move. ...???
                 }
             } else {
                 if (tryPlayerAction(dir, actionMode)) {
@@ -204,6 +308,30 @@ public class Main : MonoBehaviour
         }
     }
 
+    //// ++++ UI
+    public void uiDigBtn(bool down) {
+        uiDigBtnDown = down;
+    }
+
+    public void uiPlaceBtn(bool down) {
+        uiPlaceBtnDown = down;
+    }
+
+    public void uiUpBtn(bool down) {
+        if (uiUpBtnDown && !down) {
+            pendingUp = true;
+        }
+        uiUpBtnDown = down;
+    }
+
+    public void uiDownBtn(bool down) {
+        if (uiDownBtnDown && !down) {
+            pendingDown = true;
+        }
+        uiDownBtnDown = down;
+    }
+    //// ---- UI
+
     static Material lineMaterial;
     static void CreateLineMaterial()
     {
@@ -240,7 +368,7 @@ public class Main : MonoBehaviour
         GL.MultMatrix(transform.localToWorldMatrix);
 
         Pos3 center = playerPos.toPos3();
-        Pos3 visionRadius = new Pos3(((long)(horizExtent))+1,((long)(vertExtent))+1,2); //TODO //PARAM z vision
+        Pos3 visionRadius = new Pos3(((long)(horizExtent))+1,((long)(vertExtent))+1,1); //TODO //PARAM z vision
         world.render(center, center - visionRadius, center + visionRadius);
 
         GL.PopMatrix();

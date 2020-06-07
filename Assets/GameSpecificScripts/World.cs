@@ -35,7 +35,7 @@ public class World
 
     public void render(Pos3 center, Pos3 downWestSouth, Pos3 upEastNorth) {
         //TODO Scale?
-        Debug.Log("world render " + center + " " + downWestSouth + "->" + upEastNorth);
+        //Debug.Log("world render " + center + " " + downWestSouth + "->" + upEastNorth);
         for (long z = downWestSouth.z; z <= upEastNorth.z; z++) {
             for (long y = downWestSouth.y; y <= upEastNorth.y; y++) {
                 for (long x = downWestSouth.x; x <= upEastNorth.x; x++) {
