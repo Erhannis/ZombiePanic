@@ -1,5 +1,8 @@
+
+using System;
+using UnityEditorInternal;
 /**
-    Mutable Pos3
+Mutable Pos3
 */
 public class MPos3 {
     public long x;
@@ -16,6 +19,8 @@ public class MPos3 {
         return new Pos3(x,y,z);
     }
 
+    //TODO Merge all these with Pos3
+
     public static MPos3 operator +(MPos3 a) => a;
     public static MPos3 operator -(MPos3 a) => new MPos3(-a.x, -a.y, -a.z);
 
@@ -27,6 +32,22 @@ public class MPos3 {
 
     public static MPos3 operator *(MPos3 a, long l)
         => new MPos3(a.x * l, a.y * l, a.z * l);
+
+    public long normL0() {
+        long sum = 0;
+        foreach (long l in new long[] { x, y, z }) {
+            sum += Math.Abs(l);
+        }
+        return sum;
+    }
+
+    public long normLInf() {
+        long max = 0;
+        foreach (long l in new long[] { x, y, z }) {
+            max = Math.Max(Math.Abs(l), max);
+        }
+        return max;
+    }
 
     public override string ToString() => $"({x}, {y}, {z})";
 

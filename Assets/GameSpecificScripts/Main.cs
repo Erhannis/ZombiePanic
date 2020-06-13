@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using System.Linq;
 using Entities;
 
@@ -15,7 +17,7 @@ public class Main : MonoBehaviour
 
     private System.Random rand = new System.Random();
 
-    private const int TARGET_FPS = 60;
+    private const int TARGET_FPS = 6000;
 
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
@@ -51,7 +53,18 @@ public class Main : MonoBehaviour
         player = new Broodmother();
         actionMode = ActionMode.MOVE;
         world.getTile(playerPos.toPos3()).contents.Add(player);
-        
+
+        for (int x = -10; x <= 10; x++) {
+            for (int y = -10; y <= 10; y++) {
+                for (int z = -10; z <= 10; z++) {
+                    Pos3 pos = new Pos3(x,y,z);
+                    if (((pos.x*pos.x)+(pos.y*pos.y)+(pos.z*pos.z)) == 16) {
+                        world.getTile(pos).contents.Add(new Drone());
+                    }
+                }
+            }
+        }         
+
         // playBounds = new Rect(i2x(0),-50f,BOARD_WIDTH,200f); // Extra high, for high shots
     }
     
@@ -60,10 +73,17 @@ public class Main : MonoBehaviour
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = TARGET_FPS;
     }
-      
+
+    public Text text_u;
+    private long count_u = 0;
+    private double ms_u = 0;
+    private System.Diagnostics.Stopwatch sw_u = new System.Diagnostics.Stopwatch();
     // Update is called once per frame
     void Update()
     {
+        sw_u.Restart();
+        sw_u.Start();
+
         if (Application.targetFrameRate != TARGET_FPS)
             Application.targetFrameRate = TARGET_FPS;
         //Camera.main.GetComponent<Camera>().orthographicSize = (0.5f * playBounds.width * Screen.height) / Screen.width;
@@ -93,6 +113,16 @@ public class Main : MonoBehaviour
         // Update shells
 
         doPlayerInput();
+
+        sw_u.Stop();
+        TimeSpan ts = sw_u.Elapsed;
+        ms_u += ts.TotalMilliseconds;
+        count_u++;
+        if (count_u >= 10) {
+            text_u.text = "" + (ms_u/count_u);
+            count_u = 0;
+            ms_u = 0;
+        }
     }
 
     private MPos3 checkInputDir(Vector3 cursorPos) {
@@ -352,9 +382,17 @@ public class Main : MonoBehaviour
         }
     }
 
+    public Text text_oro;
+    private long count_oro = 0;
+    private double ms_oro = 0;
+    private System.Diagnostics.Stopwatch sw_oro = new System.Diagnostics.Stopwatch();
+
     // Will be called after all regular rendering is done
     public void OnRenderObject()
     {
+        sw_oro.Restart();
+        sw_oro.Start();
+
         var vertExtent = Camera.main.GetComponent<Camera>().orthographicSize;    
         var horizExtent = vertExtent * Screen.width / Screen.height;
 
@@ -372,6 +410,16 @@ public class Main : MonoBehaviour
         world.render(center, center - visionRadius, center + visionRadius);
 
         GL.PopMatrix();
+
+        sw_oro.Stop();
+        TimeSpan ts = sw_oro.Elapsed;
+        ms_oro += ts.TotalMilliseconds;
+        count_oro++;
+        if (count_oro >= 10) {
+            text_oro.text = "" + (((float)ms_oro)/count_oro);
+            ms_oro = 0;
+            count_oro = 0;
+        }
     }
 
     private int lineCount = 100;

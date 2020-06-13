@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.Remoting.Messaging;
 using UnityEngine;
 
-public class Pos3
+public class Pos3 //TODO Extend an xyz interface?
 {
     public readonly long x;
     public readonly long y;
@@ -18,6 +20,8 @@ public class Pos3
         return new MPos3(x,y,z);
     }
 
+    //TODO Merge all these with MPos3
+
     public static Pos3 operator +(Pos3 a) => a;
     public static Pos3 operator -(Pos3 a) => new Pos3(-a.x, -a.y, -a.z);
 
@@ -29,6 +33,22 @@ public class Pos3
 
     public static Pos3 operator *(Pos3 a, long l)
         => new Pos3(a.x * l, a.y * l, a.z * l);
+
+    public long normL0() {
+        long sum = 0;
+        foreach (long l in new long[] { x, y, z }) {
+            sum += Math.Abs(l);
+        }
+        return sum;
+    }
+
+    public long normLInf() {
+        long max = 0;
+        foreach (long l in new long[] { x, y, z }) {
+            max = Math.Max(Math.Abs(l), max);
+        }
+        return max;
+    }
 
     public override string ToString() => $"({x}, {y}, {z})";
 
