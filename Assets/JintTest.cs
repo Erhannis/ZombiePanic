@@ -9,18 +9,48 @@ using Jibu;
 
 public class JintTest : MonoBehaviour
 {
+    private const int TARGET_FPS = 1;
+
     public Text text;
 
 //    ObjectWithEvent m_ObjectWithEvent = new ObjectWithEvent();
 
+    ChannelWriter<int> syncA;
+    ChannelReader<int> syncB;
+
     private void Start()
     {
-        //text.text = new JibuTest().Main();
-        new JintRunner(
-@"for (int i = 0; i < 10; i++) {
+        {
+            Channel<int> syncA0 = new Channel<int>();
+            Channel<int> syncB0 = new Channel<int>();
+            syncA = syncA0.ChannelWriter;
+            syncB = syncB0.ChannelReader;
+            //text.text = new JibuTest().Main();
+            new JintRunner(syncA0.ChannelReader, syncB0.ChannelWriter,
+@"for (let i = 0; i < 10; i++) {
     move(Pos3(1,0,0));
+}
+while (true) {
+    move(Pos3(0,0,0));
 }"
-        ).Start();
+            ).Start();
+        }
+    }
+
+    void Awake() {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = TARGET_FPS;
+    }
+
+    private void Update() {
+        if (Application.targetFrameRate != TARGET_FPS)
+            Application.targetFrameRate = TARGET_FPS;
+
+        Debug.Log("update start");
+        syncA.Write(0);
+        Debug.Log("update w/r");
+        syncB.Read();
+        Debug.Log("update end");
     }
 
     /*
@@ -61,20 +91,30 @@ public class JintTest : MonoBehaviour
 
     class JintRunner : Async {
         private string program;
-        private ChannelReader<int> sync;
+        private ChannelReader<int> syncA;
+        private ChannelWriter<int> syncB;
 
-        public JintRunner(ChannelReader<int> sync, string program) {
+        public JintRunner(ChannelReader<int> syncA, ChannelWriter<int> syncB, string program) {
             this.program = program;
-            this.sync = sync;
+            this.syncA = syncA;
+            this.syncB = syncB;
         }
 
         public override void Run() {
+            Debug.Log("run start");
             Engine engine = new Engine(); //TODO Use EnterExecutionContext?
             engine.SetValue("log", new Func<object, bool>(log));
             engine.SetValue("Pos3", new Func<long, long, long, object>((x,y,z) => new Pos3(x,y,z))); //TODO Autoimport?
             engine.SetValue("move", new Func<Pos3, bool>(move));
-            engine.Execute(program);
+            Debug.Log("run exec...");
+            try {
+                engine.Execute(program);
+            } catch (Exception e) {
+                Debug.LogError("run error! " + e);
+                //TODO Poison?
+            }
             Debug.LogWarning("//TODO //!!! Don't forget that the program might not actually be done!  Could leave timers etc!");
+            Debug.Log("run end");
         }
 
         private bool log(object o) {
@@ -84,10 +124,16 @@ public class JintTest : MonoBehaviour
         }
 
         private bool move(Pos3 dir) {
+            Debug.Log("move 0");
             if (checkDead()) { //TODO ???
                 return false;
             }
-            int val = sync.Read();
+            Debug.Log("move start");
+            int val = syncA.Read();
+            //TODO Do something?
+            Debug.Log("move " + dir);
+            syncB.Write(val);
+            Debug.Log("move end");
             return true;
         }
 
