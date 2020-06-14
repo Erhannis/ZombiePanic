@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
 using Entities;
+using Jibu;
 
 public class Main : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class Main : MonoBehaviour
 
     private System.Random rand = new System.Random();
 
-    private const int TARGET_FPS = 6000;
+    private const int TARGET_FPS = 1;
 
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
@@ -47,12 +48,38 @@ public class Main : MonoBehaviour
  
     private List<Color> predefTankColors = new List<Color> {Color.blue, Color.red, Color.green, Color.magenta, Color.yellow, Color.cyan};
 
+    private List<(ChannelReader<int>, ChannelWriter<int>)> syncs = new List<(ChannelReader<int>, ChannelWriter<int>)>();
+
     void Init() {
         world = new World();
         playerPos = new MPos3(0,0,0);
         player = new Broodmother(null);
         actionMode = ActionMode.MOVE;
         world.getTile(playerPos.toPos3()).addItem(player);
+
+        ChannelReader<int> syncA;
+        ChannelWriter<int> syncB;
+        Channel<int> syncA0 = new Channel<int>();
+        Channel<int> syncB0 = new Channel<int>();
+        syncs.Add((syncA0.ChannelReader, syncB0.ChannelWriter));
+        CreatureRunner cr = new CreatureRunner(player, syncA0.ChannelWriter, syncB0.ChannelReader,
+@"for (let i = 0; i < 10; i++) {
+    move(Pos3(1,0,0));
+}
+for (let i = 0; i < 10; i++) {
+    move(Pos3(0,1,0));
+}
+for (let i = 0; i < 10; i++) {
+    move(Pos3(-1,0,0));
+}
+for (let i = 0; i < 10; i++) {
+    move(Pos3(0,-1,0));
+}
+while (true) {
+    move(Pos3(0,0,0));
+}"
+        );
+        cr.Start();
 
         for (int x = -10; x <= 10; x++) {
             for (int y = -10; y <= 10; y++) {
@@ -89,6 +116,14 @@ public class Main : MonoBehaviour
         //Camera.main.GetComponent<Camera>().orthographicSize = (0.5f * playBounds.width * Screen.height) / Screen.width;
 
         Camera.main.backgroundColor = new Color(0,0,0); //TODO Move elsewhere?
+
+        foreach (var (a, b) in syncs) {
+            Debug.Log("main sync 0");
+            a.Read();
+            Debug.Log("main sync 1");
+            b.Write(0);
+            Debug.Log("main sync 2");
+        }
 
         //Debug.Log("//TODO Remove reset key");
         if (Input.GetKeyDown("r")) {
