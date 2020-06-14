@@ -4,6 +4,8 @@ using UnityEngine;
 using Jint;
 using Jibu;
 using System;
+using System.Security;
+using UnityEngine.XR;
 
 /*
 Ideas for interface
@@ -42,15 +44,11 @@ carry()
 */
 
 //TODO ...How the heck am I gonna save state?
-class JintRunner : Async {
+public class JintRunner : Async {
     private string program;
-    private ChannelReader<int> syncA;
-    private ChannelWriter<int> syncB;
 
-    public JintRunner(ChannelReader<int> syncA, ChannelWriter<int> syncB, string program) {
+    public JintRunner(string program) {
         this.program = program;
-        this.syncA = syncA;
-        this.syncB = syncB;
     }
 
     public override void Run() {
@@ -58,41 +56,30 @@ class JintRunner : Async {
         Engine engine = new Engine(); //TODO Use EnterExecutionContext?
         engine.SetValue("log", new Func<object, bool>(log));
         engine.SetValue("Pos3", new Func<long, long, long, object>((x, y, z) => new Pos3(x, y, z))); //TODO Autoimport?
-        engine.SetValue("move", new Func<Pos3, bool>(move));
+        foreach ((string, Delegate) e in getFunctions()) {
+            engine.SetValue(e.Item1, e.Item2);
+        }
         Debug.Log("run exec...");
         try {
             engine.Execute(program);
         } catch (Exception e) {
-            Debug.LogError("run error! " + e);
-            syncA.Poison();
-            syncB.Poison();
-            //TODO Poison?
+            handleException(e);
         }
         Debug.LogWarning("//TODO //!!! Don't forget that the program might not actually be done!  Could leave timers etc!");
         Debug.Log("run end");
+    }
+
+    protected virtual (string, Delegate)[] getFunctions() { //TODO Eh...this is kinda gross.  Couldn't pass (string, Delegate)[] into constructor, so I'm putting this here, but bleh.
+        return new (string, Delegate)[0];
+    }
+
+    protected virtual void handleException(Exception e) {
+
     }
 
     private bool log(object o) {
         Debug.Log(o);
         //text.text = "" + o;
         return true;
-    }
-
-    private bool move(Pos3 dir) {
-        Debug.Log("move 0");
-        if (checkDead()) { //TODO ???
-            return false;
-        }
-        Debug.Log("move start");
-        int val = syncA.Read();
-        //TODO Do something?
-        Debug.Log("move " + dir);
-        syncB.Write(val);
-        Debug.Log("move end");
-        return true;
-    }
-
-    private bool checkDead() { //TODO ???
-        return false;
     }
 }

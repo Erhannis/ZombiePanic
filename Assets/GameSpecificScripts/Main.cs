@@ -50,16 +50,16 @@ public class Main : MonoBehaviour
     void Init() {
         world = new World();
         playerPos = new MPos3(0,0,0);
-        player = new Broodmother();
+        player = new Broodmother(null);
         actionMode = ActionMode.MOVE;
-        world.getTile(playerPos.toPos3()).contents.Add(player);
+        world.getTile(playerPos.toPos3()).addItem(player);
 
         for (int x = -10; x <= 10; x++) {
             for (int y = -10; y <= 10; y++) {
                 for (int z = -10; z <= 10; z++) {
                     Pos3 pos = new Pos3(x,y,z);
                     if (((pos.x*pos.x)+(pos.y*pos.y)+(pos.z*pos.z)) == 16) {
-                        world.getTile(pos).contents.Add(new Drone());
+                        world.getTile(pos).addItem(new Drone(null));
                     }
                 }
             }
@@ -296,32 +296,32 @@ public class Main : MonoBehaviour
         switch (mode) {
             case ActionMode.AUTODIG: // AUTODIG defaults first to movement
             case ActionMode.MOVE:
-                foreach (Entity e in newTile.contents) {
+                foreach (Entity e in newTile.getInventory()) {
                     if (e.blocksMovement()) {
                         return false;
                     }
                 }
-                world.getTile(playerPos.toPos3()).contents.Remove(player);
+                world.getTile(playerPos.toPos3()).removeItem(player);
                 playerPos = newMPos;
-                newTile.contents.Add(player);
+                newTile.addItem(player);
                 return true;
             case ActionMode.DIG:
                 Entity digged = null;
-                foreach (Entity e in newTile.contents) {
+                foreach (Entity e in newTile.getInventory()) {
                     if (e.blocksMovement()) {
                         digged = e;
                         break;
                     }
                 }
                 if (digged != null) {
-                    newTile.contents.Remove(digged);
-                    player.inventory.Add(digged);
+                    newTile.removeItem(digged);;
+                    player.addItem(digged);
                     return true;
                 } else {
                     return false;
                 }
             case ActionMode.PLACE:
-                foreach (Entity e in newTile.contents) {
+                foreach (Entity e in newTile.getInventory()) {
                     if (e.blocksMovement()) {
                         return false;
                     }
@@ -330,8 +330,8 @@ public class Main : MonoBehaviour
                     return false;
                 }
                 Entity placed = player.inventory[player.inventory.Count-1];
-                player.inventory.RemoveAt(player.inventory.Count-1);
-                newTile.contents.Add(placed);
+                player.removeItem(placed);
+                newTile.addItem(placed);
                 return true;
             default:
                 return false;

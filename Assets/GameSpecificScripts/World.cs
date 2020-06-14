@@ -18,10 +18,18 @@ public class World
 
         if (Random.Range(0,6) == 0) { //TODO Use a seed or something
         //if (pos.x == pos.z) {
-            return new Tile(pos, new Entity[]{new Air(), new Rock()});
+            return makeTile(this, pos, new Air(null), new Rock(null)); //TODO It's kindof annoying that my addition of a bidirectional reference broke the tidy creation, here
         } else {
-            return new Tile(pos, new Entity[]{new Air()});
+            return makeTile(this, pos, new Air(null));
         }
+    }
+
+    private static Tile makeTile(World parent, Pos3 pos, params Entity[] entities) { //TODO This seems much slower than the previous way.  :\
+        Tile tile = new Tile(parent, pos, new Entity[0]);
+        foreach (Entity entity in entities) {
+            tile.addItem(entity);
+        }
+        return tile;
     }
 
     public Tile getTile(Pos3 pos) {

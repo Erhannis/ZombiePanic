@@ -3,6 +3,12 @@ using System.Threading;
 
 namespace Entities {
 public abstract class Entity {
+    public Inventoried parent;
+
+    public Entity(Inventoried parent) {
+        this.parent = parent;
+    }
+
     //SPEED It would be even more horrible, but assuming a single threaded environment, you could swap the ThreadLocal for a plain Vector3.
     private ThreadLocal<Vector3> offset = new ThreadLocal<Vector3>(); // This may be one of the worst things I've done in programming.
 

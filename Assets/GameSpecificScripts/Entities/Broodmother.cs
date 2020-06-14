@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Entities {
 public class Broodmother : Creature
 {
-    public Broodmother() {
+    public Broodmother(Inventoried parent) : base(parent) {
     }
 
     override protected void renderEntity() {

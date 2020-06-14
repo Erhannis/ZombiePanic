@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Entities {
 public class Air : Entity
 {
-    public Air() {
+    public Air(Inventoried parent) : base(parent) {
     }
 
     override protected void renderEntity() {

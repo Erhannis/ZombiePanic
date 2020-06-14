@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Entities {
 public class Rock : Entity
 {
-    public Rock() {
+    public Rock(Inventoried parent) : base(parent) {
     }
 
     override protected void renderEntity() {

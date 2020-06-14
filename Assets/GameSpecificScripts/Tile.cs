@@ -6,14 +6,31 @@ using Entities;
 /**
     Tiles are 1 unit wide, from [-0.5,-0.5]to(0.5,0.5).  Not gonna think about inclusivity directly until it clearly matters.
 */
-public class Tile
+public class Tile : Inventoried
 {
+    public World parent;
+
     public Pos3 pos;
     public List<Entity> contents = new List<Entity>();
 
-    public Tile(Pos3 pos, Entity[] contents) {
+    public Tile(World parent, Pos3 pos, Entity[] contents) {
+        this.parent = parent;
         this.pos = pos; //TODO readonly?  setter?  updates?
         this.contents.AddRange(contents);
+    }
+
+    public void addItem(Entity entity) {
+        contents.Add(entity);
+        entity.parent = this;
+    }
+
+    public IEnumerable<Entity> getInventory() {
+        return contents; //TODO Should not allow modification?
+    }
+
+    public bool removeItem(Entity entity) {
+        entity.parent = null;
+        return contents.Remove(entity);
     }
 
     public void render(Pos3 center) {

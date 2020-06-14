@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Entities {
 public class Drone : Creature
 {
-    public Drone() {
+    public Drone(Inventoried parent) : base(parent) {
     }
 
     override protected void renderEntity() {

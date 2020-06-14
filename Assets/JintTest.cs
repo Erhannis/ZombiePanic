@@ -13,18 +13,18 @@ public class JintTest : MonoBehaviour
 
     public Text text;
 
-    ChannelWriter<int> syncA;
-    ChannelReader<int> syncB;
+    ChannelReader<int> syncA;
+    ChannelWriter<int> syncB;
 
     private void Start()
     {
         {
             Channel<int> syncA0 = new Channel<int>();
             Channel<int> syncB0 = new Channel<int>();
-            syncA = syncA0.ChannelWriter;
-            syncB = syncB0.ChannelReader;
+            syncA = syncA0.ChannelReader;
+            syncB = syncB0.ChannelWriter;
             //text.text = new JibuTest().Main();
-            new JintRunner(syncA0.ChannelReader, syncB0.ChannelWriter,
+            new JintRunner(
 @"for (let i = 0; i < 10; i++) {
     move(Pos3(1,0,0));
 }
@@ -45,9 +45,9 @@ while (true) {
             Application.targetFrameRate = TARGET_FPS;
 
         Debug.Log("update start");
-        syncA.Write(0);
+        syncA.Read();
         Debug.Log("update w/r");
-        syncB.Read();
+        syncB.Write(0);
         Debug.Log("update end");
     }
 }
