@@ -12,11 +12,12 @@ public class World
     //TODO Woof.  Make a good caching mechanism.
     //TODO Save world!
     public Dictionary<Pos3, Tile> tiles = new Dictionary<Pos3, Tile>();
+    private System.Random rand = new System.Random(); //TODO Use a seed or something
 
     public Tile genTile(Pos3 pos) {
         //TODO Make better world, haha
-
-        if (Random.Range(0,6) == 0) { //TODO Use a seed or something
+        
+        if (rand.Next(0,6) == 0) {
         //if (pos.x == pos.z) {
             return makeTile(this, pos, new Air(null), new Rock(null)); //TODO It's kindof annoying that my addition of a bidirectional reference broke the tidy creation, here
         } else {

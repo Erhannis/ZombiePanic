@@ -27,7 +27,6 @@ public class Main : MonoBehaviour
     private World world;
     private Rect playBounds; //TODO ????
 
-    private MPos3 playerPos; //TODO Note - player needs an avatar in-world
     private Broodmother player;
 
     private bool uiDigBtnDown = false;
@@ -52,10 +51,9 @@ public class Main : MonoBehaviour
 
     void Init() {
         world = new World();
-        playerPos = new MPos3(0,0,0);
         player = new Broodmother(null);
         actionMode = ActionMode.MOVE;
-        world.getTile(playerPos.toPos3()).addItem(player);
+        world.getTile(new Pos3(0, 0, 0)).addItem(player);
 
         ChannelReader<int> syncA;
         ChannelWriter<int> syncB;
@@ -321,10 +319,14 @@ while (true) {
         }
     }
 
+    private Pos3 getPlayerPos() {
+        return (player.parent as Tile).pos; //TODO Might not always be Tile
+    }
+
     private bool tryPlayerAction(MPos3 dir, ActionMode mode) {
         //TODO Test or something
         //TODO Should maybe have a world.moveEntity() or something
-        MPos3 newMPos = playerPos + dir;
+        MPos3 newMPos = getPlayerPos().toMPos3() + dir;
         Pos3 newPos = newMPos.toPos3();
         Tile newTile = world.getTile(newPos);
 
@@ -336,8 +338,7 @@ while (true) {
                         return false;
                     }
                 }
-                world.getTile(playerPos.toPos3()).removeItem(player);
-                playerPos = newMPos;
+                world.getTile(getPlayerPos()).removeItem(player);
                 newTile.addItem(player);
                 return true;
             case ActionMode.DIG:
@@ -440,7 +441,7 @@ while (true) {
         // match our transform
         GL.MultMatrix(transform.localToWorldMatrix);
 
-        Pos3 center = playerPos.toPos3();
+        Pos3 center = getPlayerPos();
         Pos3 visionRadius = new Pos3(((long)(horizExtent))+1,((long)(vertExtent))+1,1); //TODO //PARAM z vision
         world.render(center, center - visionRadius, center + visionRadius);
 
