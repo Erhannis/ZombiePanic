@@ -41,8 +41,8 @@ public class Main : MonoBehaviour
     void Start()
     {
         // int playerCount = (int)(float)SceneChanger.globals["playercount_float"];
-        // bool rapidfire = (bool)SceneChanger.globals["rapidfire_bool"];
-        Init();
+        string droneProgram = (string)SceneChanger.globals["initial_program"];
+        Init(droneProgram);
     }
  
     private List<(ChannelReader<int>, ChannelWriter<int>)> syncs = new List<(ChannelReader<int>, ChannelWriter<int>)>();
@@ -55,7 +55,7 @@ public class Main : MonoBehaviour
         cr.Start();
     }
 
-    void Init() {
+    void Init(string droneProgram) {
         foreach (var (a, b) in syncs) { // Try to kill any old threads
             a.Poison();
             b.Poison();
@@ -158,7 +158,7 @@ while (true) {
 
         //Debug.Log("//TODO Remove reset key");
         if (Input.GetKeyDown("r")) {
-            Init();
+            Init(""); //TODO Fix
             return;
         }
         // if (Input.GetKeyDown("q")) {

@@ -24,4 +24,9 @@ public class SceneChanger : MonoBehaviour
         Debug.Log("saveGlobalBool " + name + " " + value);
         globals[name] = value;
     }
+
+    public void saveGlobalString(string name, string value) {
+        Debug.Log("saveGlobalString " + name + " " + value);
+        globals[name] = value;
+    }
 }
