@@ -29,8 +29,12 @@ public class Tile : Inventoried
     }
 
     public bool removeItem(Entity entity) {
-        entity.parent = null;
-        return contents.Remove(entity);
+        if (contents.Remove(entity)) {
+            entity.parent = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void render(Pos3 center) {

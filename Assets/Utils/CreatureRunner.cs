@@ -93,10 +93,9 @@ public class CreatureRunner : JintRunner {
                         return false;
                     }
                 }
-                from.removeItem(creature);
-                to.addItem(creature);
+                return Inventories.move(creature, from, to);
             }
-            return true;
+            return false;
         } finally {
             int val = syncB.Read();
         }
@@ -113,21 +112,22 @@ public class CreatureRunner : JintRunner {
             }
 
             var parent = creature.parent as Tile;
-            Tile target = parent.parent.getTile(parent.pos + dir);
-            Entity digged = null;
-            foreach (Entity e in target.getInventory()) {
-                if (e.blocksMovement()) {
-                    digged = e;
-                    break;
+            if (parent != null && parent.parent != null) {
+                Tile target = parent.parent.getTile(parent.pos + dir);
+                Entity digged = null;
+                foreach (Entity e in target.getInventory()) {
+                    if (e.blocksMovement()) {
+                        digged = e;
+                        break;
+                    }
+                }
+                if (digged != null) {
+                    return Inventories.move(digged, target, creature);
+                } else {
+                    return false;
                 }
             }
-            if (digged != null) {
-                target.removeItem(digged); ;
-                creature.addItem(digged);
-                return true;
-            } else {
-                return false;
-            }
+            return false;
         } finally {
             int val = syncB.Read();
         }
@@ -144,19 +144,20 @@ public class CreatureRunner : JintRunner {
             }
 
             var parent = creature.parent as Tile;
-            Tile target = parent.parent.getTile(parent.pos + dir);
-            foreach (Entity e in target.getInventory()) {
-                if (e.blocksMovement()) {
+            if (parent != null && parent.parent != null) {
+                Tile target = parent.parent.getTile(parent.pos + dir);
+                foreach (Entity e in target.getInventory()) {
+                    if (e.blocksMovement()) {
+                        return false;
+                    }
+                }
+                if (creature.inventory.Count == 0) {
                     return false;
                 }
+                Entity placed = creature.inventory[creature.inventory.Count - 1];
+                return Inventories.move(placed, creature, target);
             }
-            if (creature.inventory.Count == 0) {
-                return false;
-            }
-            Entity placed = creature.inventory[creature.inventory.Count - 1];
-            creature.removeItem(placed);
-            target.addItem(placed);
-            return true;
+            return false;
         } finally {
             int val = syncB.Read();
         }

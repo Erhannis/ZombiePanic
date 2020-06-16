@@ -104,20 +104,13 @@ let s = Pos3(0,-1,0);
 let w = Pos3(-1,0,0);
 let u = Pos3(0,0,1);
 let d = Pos3(0,0,-1);
-log('consts done');
 while (true) {
-    log('loop...');
     if (!move(n)) {
-        log('!move()');
         get(n);
-        log('got');
         if (!put(e) && !put(w) && !put(u) && !put(d)) {
             put(s);
         }
-    } else {
-        log('move()');
     }
-    log('loop done');
 }"
                         );
                     }
@@ -358,7 +351,24 @@ while (true) {
     }
 
     private Pos3 getPlayerPos() {
-        return (player.parent as Tile).pos; //TODO Might not always be Tile
+        Tile tile = player.parent as Tile;
+        if (tile != null) {
+            return tile.pos;
+        }
+        Inventoried p = player.parent;
+        while (true) {
+            if (p is Tile) {
+                return (p as Tile).pos;
+            }
+            if (p == null) {
+                return null; //TODO ???
+            }
+            if (p is Entity) {
+                p = (p as Entity).parent;
+            } else {
+                return null; //TODO ???
+            }
+        }
     }
 
     private bool tryPlayerAction(MPos3 dir, ActionMode mode) {
@@ -376,9 +386,7 @@ while (true) {
                         return false;
                     }
                 }
-                world.getTile(getPlayerPos()).removeItem(player);
-                newTile.addItem(player);
-                return true;
+                return Inventories.move(player, world.getTile(getPlayerPos()), newTile);
             case ActionMode.DIG:
                 Entity digged = null;
                 foreach (Entity e in newTile.getInventory()) {
@@ -388,9 +396,7 @@ while (true) {
                     }
                 }
                 if (digged != null) {
-                    newTile.removeItem(digged);;
-                    player.addItem(digged);
-                    return true;
+                    return Inventories.move(digged, newTile, player);
                 } else {
                     return false;
                 }
@@ -404,9 +410,7 @@ while (true) {
                     return false;
                 }
                 Entity placed = player.inventory[player.inventory.Count-1];
-                player.removeItem(placed);
-                newTile.addItem(placed);
-                return true;
+                return Inventories.move(placed, player, newTile);
             default:
                 return false;
         }
