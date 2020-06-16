@@ -73,18 +73,14 @@ public class CreatureRunner : JintRunner {
     }
 
     private bool move(Pos3 dir) {
-        Debug.Log("move 0");
         if (checkDead()) { //TODO ???
             return false;
         }
-        Debug.Log("move start");
         syncA.Write(0);
         try {
             if (dir.normLInf() > 1) {
                 return false;
             }
-
-            Debug.Log("move " + dir);
 
             var parent = creature.parent as Tile;
             if (parent != null && parent.parent != null) {
@@ -101,7 +97,6 @@ public class CreatureRunner : JintRunner {
             return true;
         } finally {
             int val = syncB.Read();
-            Debug.Log("move end");
         }
     }
 

@@ -18,7 +18,7 @@ public class Main : MonoBehaviour
 
     private System.Random rand = new System.Random();
 
-    private const int TARGET_FPS = 100;
+    private const int TARGET_FPS = 4;
 
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
@@ -94,11 +94,16 @@ while (true) {
                         var drone = new Drone(null);
                         world.getTile(pos).addItem(drone);
                         addRunner(drone,
-@"while (true) {
-    move(Pos3(1,0,0));
-    move(Pos3(0,1,0));
-    move(Pos3(-1,0,0));
-    move(Pos3(0,-1,0));
+@"
+let n = Pos3(0,1,0);
+let e = Pos3(1,0,0);
+let s = Pos3(0,-1,0);
+let w = Pos3(-1,0,0);
+while (true) {
+    move(e);
+    move(n);
+    move(w);
+    move(s);
 }"
                         );
                     }
@@ -132,11 +137,8 @@ while (true) {
         Camera.main.backgroundColor = new Color(0,0,0); //TODO Move elsewhere?
 
         foreach (var (a, b) in syncs) {
-            Debug.Log("main sync 0");
             a.Read();
-            Debug.Log("main sync 1");
             b.Write(0);
-            Debug.Log("main sync 2");
         }
 
         //Debug.Log("//TODO Remove reset key");
