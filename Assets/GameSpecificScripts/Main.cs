@@ -67,27 +67,30 @@ public class Main : MonoBehaviour
         Channel<int> syncB = new Channel<int>();
         syncs.Add((syncA.ChannelReader, syncB.ChannelWriter));
         CreatureRunner cr = new CreatureRunner(player, syncA.ChannelWriter, syncB.ChannelReader,
-@"for (let i = 0; i < 10; i++) {
-    move(Pos3(1,0,0));
-}
-for (let i = 0; i < 10; i++) {
-    move(Pos3(0,1,0));
-}
-for (let i = 0; i < 10; i++) {
-    move(Pos3(-1,0,0));
-}
-for (let i = 0; i < 10; i++) {
-    move(Pos3(0,-1,0));
-}
-while (true) {
+//@"for (let i = 0; i < 10; i++) {
+//    move(Pos3(1,0,0));
+//}
+//for (let i = 0; i < 10; i++) {
+//    move(Pos3(0,1,0));
+//}
+//for (let i = 0; i < 10; i++) {
+//    move(Pos3(-1,0,0));
+//}
+//for (let i = 0; i < 10; i++) {
+//    move(Pos3(0,-1,0));
+//}
+//while (true) {
+//    move(Pos3(0,0,0));
+//}"
+@"while (true) {
     move(Pos3(0,0,0));
 }"
         );
         cr.Start();
-
-        for (int x = -5; x <= 5; x++) {
-            for (int y = -5; y <= 5; y++) {
-                for (int z = -5; z <= 5; z++) {
+        var R = 2;
+        for (int x = -R; x <= R; x++) {
+            for (int y = -R; y <= R; y++) {
+                for (int z = -R; z <= R; z++) {
                     Pos3 pos = new Pos3(x,y,z);
                     //if (((pos.x*pos.x)+(pos.y*pos.y)+(pos.z*pos.z)) == 16) {
                     if ((pos.x % 2 == 0) && (pos.y % 2 == 0) && (pos.z % 2 == 0)) {
@@ -99,11 +102,22 @@ let n = Pos3(0,1,0);
 let e = Pos3(1,0,0);
 let s = Pos3(0,-1,0);
 let w = Pos3(-1,0,0);
+let u = Pos3(0,0,1);
+let d = Pos3(0,0,-1);
+log('consts done');
 while (true) {
-    move(e);
-    move(n);
-    move(w);
-    move(s);
+    log('loop...');
+    if (!move(n)) {
+        log('!move()');
+        get(n);
+        log('got');
+        if (!put(e) && !put(w) && !put(u) && !put(d)) {
+            put(s);
+        }
+    } else {
+        log('move()');
+    }
+    log('loop done');
 }"
                         );
                     }
@@ -136,10 +150,16 @@ while (true) {
 
         Camera.main.backgroundColor = new Color(0,0,0); //TODO Move elsewhere?
 
-        foreach (var (a, b) in syncs) {
-            a.Read();
-            b.Write(0);
-        }
+        syncs.RemoveAll(p => { // This is a bit misleading - we're only removing things if they break
+            try {
+                p.Item1.Read();
+                p.Item2.Write(0);
+                return false;
+            } catch (PoisonException e) {
+                Debug.LogError(e);
+                return true;
+            }
+        });
 
         //Debug.Log("//TODO Remove reset key");
         if (Input.GetKeyDown("r")) {
