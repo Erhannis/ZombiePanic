@@ -45,8 +45,6 @@ public class Main : MonoBehaviour
         Init();
     }
  
-    private List<Color> predefTankColors = new List<Color> {Color.blue, Color.red, Color.green, Color.magenta, Color.yellow, Color.cyan};
-
     private List<(ChannelReader<int>, ChannelWriter<int>)> syncs = new List<(ChannelReader<int>, ChannelWriter<int>)>();
 
     private void addRunner(Creature creature, string program) {
@@ -58,6 +56,12 @@ public class Main : MonoBehaviour
     }
 
     void Init() {
+        foreach (var (a, b) in syncs) { // Try to kill any old threads
+            a.Poison();
+            b.Poison();
+        }
+        syncs.Clear();
+
         world = new World();
         player = new Broodmother(null);
         actionMode = ActionMode.MOVE;
@@ -82,9 +86,7 @@ public class Main : MonoBehaviour
 //while (true) {
 //    move(Pos3(0,0,0));
 //}"
-@"while (true) {
-    move(Pos3(0,0,0));
-}"
+@""
         );
         cr.Start();
         var R = 2;

@@ -16,7 +16,7 @@ params?
 
 ^move(dir) -> bool
 ^get(dir) -> bool
-put(dir) -> bool
+^put(dir) -> bool
 canMove(dir) -> bool
 feel(dir) -> ???
 look(dir) -> ???
@@ -31,6 +31,8 @@ broadcast(???)??? -> ??? //TODO Ditto
 listen(???)??? -> ??? //TODO Ditto
 pheromone(???)??? -> ??? // This could be for marking tiles
 home()??? -> pos3
+getPos() -> pos3
+destroy(???)??? -> bool // (from inventory?) //TODO Health, something?
 die()???
 
 debugging?
@@ -67,11 +69,15 @@ public class CreatureRunner : JintRunner {
         return z;
     }
 
+    override public void Run() {
+        base.Run();
+        syncA.Poison();
+        syncB.Poison();
+    }
+
     override protected void handleException(Exception e) {
         base.handleException(e);
         Debug.LogError("run error! " + e);
-        syncA.Poison();
-        syncB.Poison();
     }
 
     private bool move(Pos3 dir) {
