@@ -98,23 +98,7 @@ public class Main : MonoBehaviour
                     if ((pos.x % 2 == 0) && (pos.y % 2 == 0) && (pos.z % 2 == 0)) {
                         var drone = new Drone(null);
                         world.getTile(pos).addItem(drone);
-                        addRunner(drone,
-@"
-let n = Pos3(0,1,0);
-let e = Pos3(1,0,0);
-let s = Pos3(0,-1,0);
-let w = Pos3(-1,0,0);
-let u = Pos3(0,0,1);
-let d = Pos3(0,0,-1);
-while (true) {
-    if (!move(n)) {
-        get(n);
-        if (!put(e) && !put(w) && !put(u) && !put(d)) {
-            put(s);
-        }
-    }
-}"
-                        );
+                        addRunner(drone, droneProgram);
                     }
                 }
             }
