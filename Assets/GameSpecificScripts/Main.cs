@@ -18,7 +18,7 @@ public class Main : MonoBehaviour
 
     private System.Random rand = new System.Random();
 
-    private const int TARGET_FPS = 1;
+    private const int TARGET_FPS = 100;
 
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
@@ -49,18 +49,24 @@ public class Main : MonoBehaviour
 
     private List<(ChannelReader<int>, ChannelWriter<int>)> syncs = new List<(ChannelReader<int>, ChannelWriter<int>)>();
 
+    private void addRunner(Creature creature, string program) {
+        Channel<int> syncA = new Channel<int>();
+        Channel<int> syncB = new Channel<int>();
+        syncs.Add((syncA.ChannelReader, syncB.ChannelWriter));
+        CreatureRunner cr = new CreatureRunner(creature, syncA.ChannelWriter, syncB.ChannelReader, program);
+        cr.Start();
+    }
+
     void Init() {
         world = new World();
         player = new Broodmother(null);
         actionMode = ActionMode.MOVE;
         world.getTile(new Pos3(0, 0, 0)).addItem(player);
 
-        ChannelReader<int> syncA;
-        ChannelWriter<int> syncB;
-        Channel<int> syncA0 = new Channel<int>();
-        Channel<int> syncB0 = new Channel<int>();
-        syncs.Add((syncA0.ChannelReader, syncB0.ChannelWriter));
-        CreatureRunner cr = new CreatureRunner(player, syncA0.ChannelWriter, syncB0.ChannelReader,
+        Channel<int> syncA = new Channel<int>();
+        Channel<int> syncB = new Channel<int>();
+        syncs.Add((syncA.ChannelReader, syncB.ChannelWriter));
+        CreatureRunner cr = new CreatureRunner(player, syncA.ChannelWriter, syncB.ChannelReader,
 @"for (let i = 0; i < 10; i++) {
     move(Pos3(1,0,0));
 }
@@ -79,12 +85,22 @@ while (true) {
         );
         cr.Start();
 
-        for (int x = -10; x <= 10; x++) {
-            for (int y = -10; y <= 10; y++) {
-                for (int z = -10; z <= 10; z++) {
+        for (int x = -5; x <= 5; x++) {
+            for (int y = -5; y <= 5; y++) {
+                for (int z = -5; z <= 5; z++) {
                     Pos3 pos = new Pos3(x,y,z);
-                    if (((pos.x*pos.x)+(pos.y*pos.y)+(pos.z*pos.z)) == 16) {
-                        world.getTile(pos).addItem(new Drone(null));
+                    //if (((pos.x*pos.x)+(pos.y*pos.y)+(pos.z*pos.z)) == 16) {
+                    if ((pos.x % 2 == 0) && (pos.y % 2 == 0) && (pos.z % 2 == 0)) {
+                        var drone = new Drone(null);
+                        world.getTile(pos).addItem(drone);
+                        addRunner(drone,
+@"while (true) {
+    move(Pos3(1,0,0));
+    move(Pos3(0,1,0));
+    move(Pos3(-1,0,0));
+    move(Pos3(0,-1,0));
+}"
+                        );
                     }
                 }
             }

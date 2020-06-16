@@ -7,42 +7,6 @@ using System;
 using System.Security;
 using UnityEngine.XR;
 
-/*
-Ideas for interface
-Ugh, making this "safe" is gonna be hard - maybe infeasible?  Embrace it?
-
-params?
-
-move(dir) -> bool
-get(dir) -> bool
-put(dir) -> bool
-canMove(dir) -> bool
-feel(dir) -> ???
-look(dir) -> ???
-smell(???)??? -> ??? // See `pheromone`
-inventory() -> ???
-invCount() -> int
-sleep(turns) -> bool?
-getAge()??? -> int
-getTime()??? -> int
-speak(???)??? -> ??? //TODO Now, surely this must be "chitter" or "pheromone" or something.  :)
-broadcast(???)??? -> ??? //TODO Ditto
-listen(???)??? -> ??? //TODO Ditto
-pheromone(???)??? -> ??? // This could be for marking tiles
-home()??? -> pos3
-die()???
-
-debugging?
-getError()
-getOrders()
-getState()
-getLogs()
-reset()
-resorb() // decommission, kill, eat, etc.  ..."filicide" acheivement, horrible crunching noise???  0_0
-carry()
-
-*/
-
 //TODO ...How the heck am I gonna save state?
 public class JintRunner : Async {
     private string program;
