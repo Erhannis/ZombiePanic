@@ -62,9 +62,9 @@ let tunnelto = function(target) {
   } while (true);
 };
 
-for (let y = -2; y <= 2; y++) {
-  for (let z = -2; z <= 2; z++) {
-    for (let x = -2; x <= 2; x++) {
+for (let y = -3; y <= 3; y++) {
+  for (let z = -3; z <= 3; z++) {
+    for (let x = -3; x <= 3; x++) {
       tunnelto(Pos3(x,y,z));
       while (move(n)) {}
       get(n);

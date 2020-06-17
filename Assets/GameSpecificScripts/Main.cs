@@ -33,7 +33,7 @@ public class Main : MonoBehaviour {
 
     private System.Random rand = new System.Random();
 
-    private const int TARGET_FPS = 4;
+    private int TARGET_FPS = 4;
 
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
@@ -72,6 +72,7 @@ public class Main : MonoBehaviour {
             }
         }
 
+        this.TARGET_FPS = 4;
         this.turnCount = 0;
         this.requiredDensity = requiredDensity;
         world = new World();
@@ -130,6 +131,7 @@ public class Main : MonoBehaviour {
         // }
 
         //doPlayerInput(); // No player input in autonomous mode
+        doSpeedUI();
 
         turnCount++;
         text_u.text = "" + turnCount;
@@ -239,6 +241,19 @@ public class Main : MonoBehaviour {
         } else {
             return null;
         }
+    }
+
+    private void doSpeedUI() {
+        if (pendingUp) {
+            TARGET_FPS++;
+        }
+        if (pendingDown) {
+            if (TARGET_FPS > 1) {
+                TARGET_FPS--;
+            }
+        }
+        pendingUp = false;
+        pendingDown = false;
     }
 
     private void doPlayerInput() {
