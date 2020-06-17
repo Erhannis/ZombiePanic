@@ -7,6 +7,22 @@ using System.Linq;
 using Entities;
 using Jibu;
 
+/*
+Halfgame ideas:
+    Boolean victory
+        Collect X rocks
+            In under TIME
+        Capture opposing team
+        Seal yourselves in
+        Find the X in TIME
+
+    Continuous victory
+        Most rocks in TIME
+        Farthest spread in TIME
+        Find the X; TIME trial
+
+*/
+
 public class Main : MonoBehaviour
 {
     private enum ActionMode {
@@ -45,64 +61,42 @@ public class Main : MonoBehaviour
         Init(droneProgram);
     }
  
-    private List<(ChannelReader<int>, ChannelWriter<int>)> syncs = new List<(ChannelReader<int>, ChannelWriter<int>)>();
-
-    private void addRunner(Creature creature, string program) {
-        Channel<int> syncA = new Channel<int>();
-        Channel<int> syncB = new Channel<int>();
-        syncs.Add((syncA.ChannelReader, syncB.ChannelWriter));
-        CreatureRunner cr = new CreatureRunner(creature, syncA.ChannelWriter, syncB.ChannelReader, program);
-        cr.Start();
-    }
-
     void Init(string droneProgram) {
-        foreach (var (a, b) in syncs) { // Try to kill any old threads
-            a.Poison();
-            b.Poison();
+        if (world != null) {
+            // Try to kill any old threads
+            foreach (var (_, a, b) in world.runners) {
+                a.Poison();
+                b.Poison();
+            }
         }
-        syncs.Clear();
 
         world = new World();
         player = new Broodmother(null);
         actionMode = ActionMode.MOVE;
         world.getTile(new Pos3(0, 0, 0)).addItem(player);
 
-        Channel<int> syncA = new Channel<int>();
-        Channel<int> syncB = new Channel<int>();
-        syncs.Add((syncA.ChannelReader, syncB.ChannelWriter));
-        CreatureRunner cr = new CreatureRunner(player, syncA.ChannelWriter, syncB.ChannelReader,
-//@"for (let i = 0; i < 10; i++) {
-//    move(Pos3(1,0,0));
-//}
-//for (let i = 0; i < 10; i++) {
-//    move(Pos3(0,1,0));
-//}
-//for (let i = 0; i < 10; i++) {
-//    move(Pos3(-1,0,0));
-//}
-//for (let i = 0; i < 10; i++) {
-//    move(Pos3(0,-1,0));
-//}
-//while (true) {
-//    move(Pos3(0,0,0));
-//}"
-@""
-        );
-        cr.Start();
+        //world.addRunner(player, "");
+
         var R = 2;
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        sw.Start();
+        int count = 0;
         for (int x = -R; x <= R; x++) {
             for (int y = -R; y <= R; y++) {
                 for (int z = -R; z <= R; z++) {
-                    Pos3 pos = new Pos3(x,y,z);
+                    Pos3 pos = new Pos3(x, y, z);
                     //if (((pos.x*pos.x)+(pos.y*pos.y)+(pos.z*pos.z)) == 16) {
                     if ((pos.x % 2 == 0) && (pos.y % 2 == 0) && (pos.z % 2 == 0)) {
                         var drone = new Drone(null);
                         world.getTile(pos).addItem(drone);
-                        addRunner(drone, droneProgram);
+                        world.addRunner(drone, droneProgram); //TODO It's a little...odd, that you add a drone to the world, then separately add its brain to the world.
+                        count++;
                     }
                 }
             }
-        }         
+        }
+        sw.Stop();
+        Debug.Log("started " + count + " drones in " + sw.ElapsedMilliseconds);
 
         // playBounds = new Rect(i2x(0),-50f,BOARD_WIDTH,200f); // Extra high, for high shots
     }
@@ -129,20 +123,11 @@ public class Main : MonoBehaviour
 
         Camera.main.backgroundColor = new Color(0,0,0); //TODO Move elsewhere?
 
-        syncs.RemoveAll(p => { // This is a bit misleading - we're only removing things if they break
-            try {
-                p.Item1.Read();
-                p.Item2.Write(0);
-                return false;
-            } catch (PoisonException e) {
-                Debug.LogError(e);
-                return true;
-            }
-        });
+        world.stepRunners();
 
         //Debug.Log("//TODO Remove reset key");
         if (Input.GetKeyDown("r")) {
-            Init(""); //TODO Fix
+            Init((string)SceneChanger.globals["initial_program"]);
             return;
         }
         // if (Input.GetKeyDown("q")) {

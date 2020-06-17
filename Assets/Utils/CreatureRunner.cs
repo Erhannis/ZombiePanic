@@ -14,6 +14,8 @@ params?
 
 //TODO MAKE SURE TO SYNC READ/WRITE LOCK ON THESE ACTIONS!
 
+//TODO Make the names cooler :P (second difficulty level is "slightly obfuscated"?)
+
 ^move(dir) -> bool
 ^get(dir) -> bool
 ^put(dir) -> bool
@@ -31,9 +33,14 @@ broadcast(???)??? -> ??? //TODO Ditto
 listen(???)??? -> ??? //TODO Ditto
 pheromone(???)??? -> ??? // This could be for marking tiles
 home()??? -> pos3
-getPos() -> pos3
+^getPos() -> pos3 //TODO Could be relative to a set point, or the hatching point
 destroy(???)??? -> bool // (from inventory?) //TODO Health, something?
+save(???)??? -> ??? // For saving state, if we can't figure out a better way
+load(???)??? -> ??? // Ditto
 die()???
+
+Probation:
+^replicate(pos3) -> bool //TODO Ehh, maybe for some circumstances, but it doesn't quite fit the narrative of Broodmother, for drones
 
 debugging?
 getError()
@@ -46,9 +53,11 @@ carry()
 
 */
 public class CreatureRunner : JintRunner {
-    private Creature creature;
-    private ChannelWriter<int> syncA;
-    private ChannelReader<int> syncB;
+    private readonly Creature creature;
+    private readonly ChannelWriter<int> syncA;
+    private readonly ChannelReader<int> syncB;
+
+    private bool dead = false;
 
     public CreatureRunner(Creature creature, ChannelWriter<int> syncA, ChannelReader<int> syncB, string program) : base(program) {
         this.creature = creature;
@@ -61,7 +70,10 @@ public class CreatureRunner : JintRunner {
         var y = new (string, Delegate)[] {
             ("move", new Func<Pos3, bool>(move)),
             ("get", new Func<Pos3, bool>(get)),
-            ("put", new Func<Pos3, bool>(put))
+            ("put", new Func<Pos3, bool>(put)),
+            ("getPos", new Func<Pos3>(getPos)),
+            ("replicate", new Func<Pos3, bool>(replicate)),
+            ("die", new Action(die)) // :(
         };
         var z = new (string, Delegate)[x.Length + y.Length];
         x.CopyTo(z, 0);
@@ -107,6 +119,7 @@ public class CreatureRunner : JintRunner {
         }
     }
 
+    //TODO Oh - don't forget this targets blocksMovement() entities.
     private bool get(Pos3 dir) { //TODO Permissions?  Fights?  Health?  Max space?
         if (checkDead()) { //TODO ???
             return false;
@@ -114,6 +127,10 @@ public class CreatureRunner : JintRunner {
         syncA.Write(0);
         try {
             if (dir.normLInf() > 1) {
+                return false;
+            }
+
+            if (creature.inventory.Count >= Settings.MAX_INVENTORY) {
                 return false;
             }
 
@@ -151,16 +168,19 @@ public class CreatureRunner : JintRunner {
 
             var parent = creature.parent as Tile;
             if (parent != null && parent.parent != null) {
-                Tile target = parent.parent.getTile(parent.pos + dir);
-                foreach (Entity e in target.getInventory()) {
-                    if (e.blocksMovement()) {
-                        return false;
-                    }
-                }
                 if (creature.inventory.Count == 0) {
                     return false;
                 }
                 Entity placed = creature.inventory[creature.inventory.Count - 1];
+
+                Tile target = parent.parent.getTile(parent.pos + dir);
+                if (placed.blocksMovement()) { // Currently preventing two blocking entities from colocating
+                    foreach (Entity e in target.getInventory()) {
+                        if (e.blocksMovement()) {
+                            return false;
+                        }
+                    }
+                }
                 return Inventories.move(placed, creature, target);
             }
             return false;
@@ -169,8 +189,87 @@ public class CreatureRunner : JintRunner {
         }
     }
 
+    //TODO Could be relative to a set point, or the hatching point
+    private Pos3 getPos() { //TODO READ LOCK
+        syncA.Write(0);
+        try {
+            Tile tile = creature.parent as Tile;
+            if (tile != null) {
+                return tile.pos;
+            }
+            //TODO Should return null if captured?
+            Inventoried p = creature.parent;
+            while (true) {
+                if (p is Tile) {
+                    return (p as Tile).pos;
+                }
+                if (p == null) {
+                    return null; //TODO ???
+                }
+                if (p is Entity) {
+                    p = (p as Entity).parent;
+                } else {
+                    return null; //TODO ???
+                }
+            }
+        } finally {
+            int val = syncB.Read();
+        }
+    }
+
+    private bool replicate(Pos3 dir) { //TODO For some reason these cause an almost immediate crash on windows, even with low MAX_RUNNERS?
+        if (checkDead()) { //TODO ???
+            return false;
+        }
+        syncA.Write(0);
+        try {
+            if (dir.normLInf() > 1) {
+                return false;
+            }
+
+            var parent = creature.parent as Tile;
+            if (parent != null && parent.parent != null) {
+                Tile target = parent.parent.getTile(parent.pos + dir);
+                if (creature.blocksMovement()) { // Currently preventing two blocking entities from colocating
+                    foreach (Entity e in target.getInventory()) {
+                        if (e.blocksMovement()) {
+                            return false;
+                        }
+                    }
+                }
+
+                var world = parent.parent;
+
+                //TODO For now I'm just restricting this to drones
+                var mother = creature as Drone;
+                if (mother == null) {
+                    return false;
+                }
+
+                var larva = new Drone(null); //TODO Copy, not Drone
+                world.getTile(target.pos).addItem(larva);
+                world.addRunner(larva, this.program); //TODO Concurrent modification
+
+                return true;
+            }
+            return false;
+        } finally {
+            int val = syncB.Read();
+        }
+    }
+
+    private void die() {
+        dead = true;
+        syncA.Write(0);
+        try {
+            creature.parent.removeItem(creature);
+        } finally {
+            int val = syncB.Read();
+        }
+    }
+
     private bool checkDead() { //TODO ???
-        return false;
+        return dead;
     }
 }
 
@@ -204,5 +303,19 @@ while (true) {
         }
     }
 }"
+
+// Von Neumann
+@"let n = Pos3(0,1,0);
+let e = Pos3(1,0,0);
+let s = Pos3(0,-1,0);
+let w = Pos3(-1,0,0);
+let u = Pos3(0,0,1);
+let d = Pos3(0,0,-1);
+replicate(n);
+replicate(e);
+replicate(s);
+replicate(w);
+replicate(u);
+replicate(d);"
 
 */

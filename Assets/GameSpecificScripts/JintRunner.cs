@@ -9,7 +9,7 @@ using UnityEngine.XR;
 
 //TODO ...How the heck am I gonna save state?
 public class JintRunner : Async {
-    private string program;
+    public readonly string program;
 
     public JintRunner(string program) {
         this.program = program;
