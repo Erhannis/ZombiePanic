@@ -8,8 +8,7 @@ using Jibu;
     Infinite 3D world.  Centered at 0,0,0.
     Currently cubic grid, because easiest.
 */
-public class World
-{
+public class World {
     //TODO Woof.  Make a good caching mechanism.
     //TODO Save world!
     public Dictionary<Pos3, Tile> tiles = new Dictionary<Pos3, Tile>();
@@ -19,9 +18,9 @@ public class World
 
     public Tile genTile(Pos3 pos) {
         //TODO Make better world, haha
-        
-        if (rand.Next(0,6) == 0) {
-        //if (pos.x == pos.z) {
+
+        if (rand.Next(0, 6) == 0) {
+            //if (pos.x == pos.z) {
             return makeTile(this, pos, new Air(null), new Rock(null)); //TODO It's kindof annoying that my addition of a bidirectional reference broke the tidy creation, here
         } else {
             return makeTile(this, pos, new Air(null));
@@ -79,7 +78,7 @@ public class World
         for (long z = downWestSouth.z; z <= upEastNorth.z; z++) {
             for (long y = downWestSouth.y; y <= upEastNorth.y; y++) {
                 for (long x = downWestSouth.x; x <= upEastNorth.x; x++) {
-                    getTile(new Pos3(x,y,z)).render(center);
+                    getTile(new Pos3(x, y, z)).render(center);
                     //TODO ???
                 }
             }

@@ -139,7 +139,7 @@ public class CreatureRunner : JintRunner {
                 Tile target = parent.parent.getTile(parent.pos + dir);
                 Entity digged = null;
                 foreach (Entity e in target.getInventory()) {
-                    if (e.blocksMovement()) {
+                    if (e.blocksMovement() && e != creature) {
                         digged = e;
                         break;
                     }

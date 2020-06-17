@@ -242,10 +242,10 @@ RectTransform:
   m_Father: {fileID: 1066880904}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -123.2, y: -190.4}
-  m_SizeDelta: {x: 523.2, y: 31.3}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: -101.1, y: 68.06}
+  m_SizeDelta: {x: 567.4, y: 31.3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &959065358
 MonoBehaviour:
@@ -278,7 +278,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 'Move blocks to the center 10x10x10 tiles.  It''s javascript, with interface:
+  m_Text: 'Move blocks to the center 7x7x7 tiles.  It''s javascript, with interface:
     move(P3), get(P3), put(P3), getPos()->P3, replicate(P3), die()'
 --- !u!222 &959065359
 CanvasRenderer:
@@ -595,7 +595,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22473136, guid: 3c837cb798dc6c848b26847f44168da1, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 269.25006
+      value: 287.8
       objectReference: {fileID: 0}
     - target: {fileID: 22473136, guid: 3c837cb798dc6c848b26847f44168da1, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -603,11 +603,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22473136, guid: 3c837cb798dc6c848b26847f44168da1, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 231.09998
+      value: 194.1
       objectReference: {fileID: 0}
     - target: {fileID: 22473136, guid: 3c837cb798dc6c848b26847f44168da1, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 78.70001
+      value: 78.7
       objectReference: {fileID: 0}
     - target: {fileID: 22473136, guid: 3c837cb798dc6c848b26847f44168da1, type: 3}
       propertyPath: m_AnchorMin.x
@@ -676,7 +676,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 11455190, guid: a3de2ba0ded325146a882192687d7e98, type: 3}
       propertyPath: m_Text
-      value: "let n = Pos3(0,1,0);\nlet e = Pos3(1,0,0);\nlet s = Pos3(0,-1,0);\nlet
+      value: "let n = Pos3(0,1,0); // long .x .y .z\nlet e = Pos3(1,0,0);\nlet s = Pos3(0,-1,0);\nlet
         w = Pos3(-1,0,0);\nlet u = Pos3(0,0,1);\nlet d = Pos3(0,0,-1);\nwhile (true)
         {\n  if (!move(n)) {\n    get(n);\n    if (!put(e) && !put(w) && !put(u)
         && !put(d)) {\n      put(s);\n    }\n  }\n}"
@@ -758,7 +758,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22455190, guid: a3de2ba0ded325146a882192687d7e98, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -12.999939
+      value: -12.9999695
       objectReference: {fileID: 0}
     - target: {fileID: 22455190, guid: a3de2ba0ded325146a882192687d7e98, type: 3}
       propertyPath: m_SizeDelta.x

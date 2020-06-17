@@ -23,8 +23,7 @@ Halfgame ideas:
 
 */
 
-public class Main : MonoBehaviour
-{
+public class Main : MonoBehaviour {
     private enum ActionMode {
         MOVE,
         DIG,
@@ -40,10 +39,12 @@ public class Main : MonoBehaviour
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
     private const float TIMESCALE = 2f; //TODO Time
 
+    private Color BG_COLOR = Color.black;
+
     private World world;
     private Rect playBounds; //TODO ????
 
-    private Broodmother player;
+    private Drone player;
 
     private bool uiDigBtnDown = false;
     private bool uiPlaceBtnDown = false;
@@ -53,15 +54,16 @@ public class Main : MonoBehaviour
     private bool pendingDown = false;
 
     private ActionMode actionMode;
+    private float requiredDensity = 60;
+    private long turnCount = 0;
 
-    void Start()
-    {
-        // int playerCount = (int)(float)SceneChanger.globals["playercount_float"];
+    void Start() {
         string droneProgram = (string)SceneChanger.globals["initial_program"];
-        Init(droneProgram);
+        float requiredDensity = (float)SceneChanger.globals["required_density_float"];
+        Init(droneProgram, requiredDensity);
     }
- 
-    void Init(string droneProgram) {
+
+    void Init(string droneProgram, float requiredDensity) {
         if (world != null) {
             // Try to kill any old threads
             foreach (var (_, a, b) in world.runners) {
@@ -70,39 +72,22 @@ public class Main : MonoBehaviour
             }
         }
 
+        this.turnCount = 0;
+        this.requiredDensity = requiredDensity;
         world = new World();
-        player = new Broodmother(null);
+        player = new Drone(null);
         actionMode = ActionMode.MOVE;
-        world.getTile(new Pos3(0, 0, 0)).addItem(player);
-
-        //world.addRunner(player, "");
-
-        var R = 2;
-        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-        sw.Start();
-        int count = 0;
-        for (int x = -R; x <= R; x++) {
-            for (int y = -R; y <= R; y++) {
-                for (int z = -R; z <= R; z++) {
-                    Pos3 pos = new Pos3(x, y, z);
-                    //if (((pos.x*pos.x)+(pos.y*pos.y)+(pos.z*pos.z)) == 16) {
-                    if ((pos.x % 2 == 0) && (pos.y % 2 == 0) && (pos.z % 2 == 0)) {
-                        var drone = new Drone(null);
-                        world.getTile(pos).addItem(drone);
-                        world.addRunner(drone, droneProgram); //TODO It's a little...odd, that you add a drone to the world, then separately add its brain to the world.
-                        count++;
-                    }
-                }
-            }
+        Tile origin = world.getTile(new Pos3(0, 0, 0));
+        foreach (Entity block in origin.getInventory().Where(e => e.blocksMovement()).ToList()) {
+            origin.removeItem(block);
         }
-        sw.Stop();
-        Debug.Log("started " + count + " drones in " + sw.ElapsedMilliseconds);
+        origin.addItem(player);
+        world.addRunner(player, droneProgram);
 
         // playBounds = new Rect(i2x(0),-50f,BOARD_WIDTH,200f); // Extra high, for high shots
     }
-    
-    void Awake()
-    {
+
+    void Awake() {
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = TARGET_FPS;
     }
@@ -112,8 +97,7 @@ public class Main : MonoBehaviour
     private double ms_u = 0;
     private System.Diagnostics.Stopwatch sw_u = new System.Diagnostics.Stopwatch();
     // Update is called once per frame
-    void Update()
-    {
+    void Update() {
         sw_u.Restart();
         sw_u.Start();
 
@@ -121,13 +105,13 @@ public class Main : MonoBehaviour
             Application.targetFrameRate = TARGET_FPS;
         //Camera.main.GetComponent<Camera>().orthographicSize = (0.5f * playBounds.width * Screen.height) / Screen.width;
 
-        Camera.main.backgroundColor = new Color(0,0,0); //TODO Move elsewhere?
+        Camera.main.backgroundColor = BG_COLOR; //TODO Move elsewhere?
 
         world.stepRunners();
 
         //Debug.Log("//TODO Remove reset key");
         if (Input.GetKeyDown("r")) {
-            Init((string)SceneChanger.globals["initial_program"]);
+            Init((string)SceneChanger.globals["initial_program"], (float)SceneChanger.globals["required_density_float"]);
             return;
         }
         // if (Input.GetKeyDown("q")) {
@@ -145,23 +129,56 @@ public class Main : MonoBehaviour
         //     checkWin();
         // }
 
-        // Update shells
+        //doPlayerInput(); // No player input in autonomous mode
 
-        doPlayerInput();
+        turnCount++;
+        text_u.text = "" + turnCount;
+        checkWin();
 
         sw_u.Stop();
-        TimeSpan ts = sw_u.Elapsed;
-        ms_u += ts.TotalMilliseconds;
-        count_u++;
-        if (count_u >= 10) {
-            text_u.text = "" + (ms_u/count_u);
-            count_u = 0;
-            ms_u = 0;
+        //TimeSpan ts = sw_u.Elapsed;
+        //ms_u += ts.TotalMilliseconds;
+        //count_u++;
+        //if (count_u >= 10) {
+        //    text_u.text = "" + (ms_u / count_u);
+        //    count_u = 0;
+        //    ms_u = 0;
+        //}
+    }
+
+    private bool hasWon = false;
+    private void checkWin() {
+        long blocks = 0;
+        long total = 0;
+        var R = 3; //TODO PARAM
+        for (int x = -R; x <= R; x++) {
+            for (int y = -R; y <= R; y++) {
+                for (int z = -R; z <= R; z++) {
+                    total++;
+                    Tile t = world.getTile(new Pos3(x, y, z));
+                    foreach (Entity e in t.getInventory()) {
+                        if (e is Rock) {
+//                        if (e.blocksMovement()) {
+                            blocks++;
+                            break; // Not allowed to try to stack blocks
+                        }
+                    }
+                }
+            }
+        }
+        if ((((double)blocks) / total) * 100 >= requiredDensity) {
+            Camera.main.backgroundColor = Color.green;
+            if (!hasWon) {
+                hasWon = true;
+                text_oro.text = "" + turnCount;
+            }
+        } else {
+            Camera.main.backgroundColor = BG_COLOR;
         }
     }
 
     private MPos3 checkInputDir(Vector3 cursorPos) {
-        MPos3 dir = new MPos3(0,0,0);
+        MPos3 dir = new MPos3(0, 0, 0);
         var ray = Camera.main.ScreenPointToRay(cursorPos);
         Vector2 tap = new Vector2(ray.origin.x, ray.origin.y).normalized;
         RaycastHit hit;
@@ -172,9 +189,9 @@ public class Main : MonoBehaviour
             List<Vector2> dirs = new List<Vector2>{
                 new Vector2(0,1).normalized,
                 new Vector2(1,1).normalized,
-                new Vector2(1,0).normalized,                
-                new Vector2(1,-1).normalized,                
-                new Vector2(0,-1).normalized,                
+                new Vector2(1,0).normalized,
+                new Vector2(1,-1).normalized,
+                new Vector2(0,-1).normalized,
                 new Vector2(-1,-1).normalized,
                 new Vector2(-1,0).normalized,
                 new Vector2(-1,1).normalized
@@ -182,7 +199,7 @@ public class Main : MonoBehaviour
             int mi = 0;
             float md = float.PositiveInfinity;
             for (int i = 0; i < 8; i++) {
-                Vector2 v = tap-dirs[i];
+                Vector2 v = tap - dirs[i];
                 if (v.magnitude < md) {
                     mi = i;
                     md = v.magnitude;
@@ -238,7 +255,7 @@ public class Main : MonoBehaviour
             actionMode = ActionMode.PLACE;
         }
 
-        MPos3 dir = new MPos3(0,0,0);
+        MPos3 dir = new MPos3(0, 0, 0);
         bool foundMov = false;
 
         if (!foundMov) {
@@ -262,7 +279,7 @@ public class Main : MonoBehaviour
             }
         }
 
-        if (dir.Equals(new MPos3(0,0,0))) {
+        if (dir.Equals(new MPos3(0, 0, 0))) {
             if (Input.GetKeyDown(KeyCode.RightArrow)) {
                 dir.x++;
             }
@@ -281,7 +298,7 @@ public class Main : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift) || pendingDown) {
                 dir.z--;
             }
-            if (!dir.Equals(new MPos3(0,0,0))) {
+            if (!dir.Equals(new MPos3(0, 0, 0))) {
                 foundMov = true;
             }
         }
@@ -380,7 +397,7 @@ public class Main : MonoBehaviour
                 if (player.inventory.Count == 0) {
                     return false;
                 }
-                Entity placed = player.inventory[player.inventory.Count-1];
+                Entity placed = player.inventory[player.inventory.Count - 1];
                 return Inventories.move(placed, player, newTile);
             default:
                 return false;
@@ -412,10 +429,8 @@ public class Main : MonoBehaviour
     //// ---- UI
 
     static Material lineMaterial;
-    static void CreateLineMaterial()
-    {
-        if (!lineMaterial)
-        {
+    static void CreateLineMaterial() {
+        if (!lineMaterial) {
             // Unity has a built-in shader that is useful for drawing
             // simple colored things.
             Shader shader = Shader.Find("Hidden/Internal-Colored");
@@ -437,12 +452,11 @@ public class Main : MonoBehaviour
     private System.Diagnostics.Stopwatch sw_oro = new System.Diagnostics.Stopwatch();
 
     // Will be called after all regular rendering is done
-    public void OnRenderObject()
-    {
+    public void OnRenderObject() {
         sw_oro.Restart();
         sw_oro.Start();
 
-        var vertExtent = Camera.main.GetComponent<Camera>().orthographicSize;    
+        var vertExtent = Camera.main.GetComponent<Camera>().orthographicSize;
         var horizExtent = vertExtent * Screen.width / Screen.height;
 
         CreateLineMaterial();
@@ -455,20 +469,20 @@ public class Main : MonoBehaviour
         GL.MultMatrix(transform.localToWorldMatrix);
 
         Pos3 center = getPlayerPos();
-        Pos3 visionRadius = new Pos3(((long)(horizExtent))+1,((long)(vertExtent))+1,1); //TODO //PARAM z vision
+        Pos3 visionRadius = new Pos3(((long)(horizExtent)) + 1, ((long)(vertExtent)) + 1, 1); //TODO //PARAM z vision
         world.render(center, center - visionRadius, center + visionRadius);
 
         GL.PopMatrix();
 
         sw_oro.Stop();
-        TimeSpan ts = sw_oro.Elapsed;
-        ms_oro += ts.TotalMilliseconds;
-        count_oro++;
-        if (count_oro >= 10) {
-            text_oro.text = "" + (((float)ms_oro)/count_oro);
-            ms_oro = 0;
-            count_oro = 0;
-        }
+        //TimeSpan ts = sw_oro.Elapsed;
+        //ms_oro += ts.TotalMilliseconds;
+        //count_oro++;
+        //if (count_oro >= 10) {
+        //    text_oro.text = "" + (((float)ms_oro) / count_oro);
+        //    ms_oro = 0;
+        //    count_oro = 0;
+        //}
     }
 
     private int lineCount = 100;
@@ -477,8 +491,7 @@ public class Main : MonoBehaviour
         if (filled) {
             GL.Begin(GL.TRIANGLE_STRIP);
             GL.Color(color);
-            for (int i = 0; i <= lineCount; ++i)
-            {
+            for (int i = 0; i <= lineCount; ++i) {
                 float a = i / (float)lineCount;
                 float angle = a * Mathf.PI * 2;
                 GL.Vertex3(pos.x, pos.y, pos.z);
@@ -488,8 +501,7 @@ public class Main : MonoBehaviour
         } else {
             GL.Begin(GL.LINE_STRIP);
             GL.Color(color);
-            for (int i = 0; i <= lineCount; ++i)
-            {
+            for (int i = 0; i <= lineCount; ++i) {
                 float a = i / (float)lineCount;
                 float angle = a * Mathf.PI * 2;
                 GL.Vertex3(Mathf.Cos(angle) * r + pos.x, Mathf.Sin(angle) * r + pos.y, pos.z);
@@ -497,4 +509,5 @@ public class Main : MonoBehaviour
             GL.End();
         }
 
-    }}
+    }
+}
