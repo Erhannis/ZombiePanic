@@ -25,10 +25,7 @@ Halfgame ideas:
 
 public class Main : MonoBehaviour {
     private enum ActionMode {
-        MOVE,
-        DIG,
-        AUTODIG,
-        PLACE //TODO Differentiate between block types
+        MOVE
     }
 
     private System.Random rand = new System.Random();
@@ -44,7 +41,7 @@ public class Main : MonoBehaviour {
     private World world;
     private Rect playBounds; //TODO ????
 
-    private Drone player;
+    private Human player;
 
     private bool uiDigBtnDown = false;
     private bool uiPlaceBtnDown = false;
@@ -58,12 +55,14 @@ public class Main : MonoBehaviour {
     private long turnCount = 0;
 
     void Start() {
-        string droneProgram = (string)SceneChanger.globals["initial_program"];
-        float requiredDensity = (float)SceneChanger.globals["required_density_float"];
-        Init(droneProgram, requiredDensity);
+        //float rockDensity = (float)SceneChanger.globals["rock_density_float"];
+        //float zombieDensity = (float)SceneChanger.globals["zombie_density_float"];
+        //int zombieAttention = (int)SceneChanger.globals["zombie_attention_int"];
+        //Init(rockDensity, zombieDensity, zombieAttention);
+        Init(0.1f, 0.1f, 10);
     }
 
-    void Init(string droneProgram, float requiredDensity) {
+    void Init(float rockDensity, float zombieDensity, int zombieAttention) {
         if (world != null) {
             // Try to kill any old threads
             foreach (var (_, a, b) in world.runners) {
@@ -75,15 +74,14 @@ public class Main : MonoBehaviour {
         this.TARGET_FPS = 4;
         this.turnCount = 0;
         this.requiredDensity = requiredDensity;
-        world = new World();
-        player = new Drone(null);
+        world = new World(rockDensity, zombieDensity);
+        player = new Human(null);
         actionMode = ActionMode.MOVE;
         Tile origin = world.getTile(new Pos3(0, 0, 0));
         foreach (Entity block in origin.getInventory().Where(e => e.blocksMovement()).ToList()) {
             origin.removeItem(block);
         }
         origin.addItem(player);
-        world.addRunner(player, droneProgram);
 
         // playBounds = new Rect(i2x(0),-50f,BOARD_WIDTH,200f); // Extra high, for high shots
     }
@@ -108,11 +106,12 @@ public class Main : MonoBehaviour {
 
         Camera.main.backgroundColor = BG_COLOR; //TODO Move elsewhere?
 
-        world.stepRunners();
-
         //Debug.Log("//TODO Remove reset key");
         if (Input.GetKeyDown("r")) {
-            Init((string)SceneChanger.globals["initial_program"], (float)SceneChanger.globals["required_density_float"]);
+            float rockDensity = (float)SceneChanger.globals["rock_density_float"];
+            float zombieDensity = (float)SceneChanger.globals["zombie_density_float"];
+            int zombieAttention = (int)SceneChanger.globals["zombie_attention_int"];
+            Init(rockDensity, zombieDensity, zombieAttention);
             return;
         }
         // if (Input.GetKeyDown("q")) {
@@ -130,8 +129,9 @@ public class Main : MonoBehaviour {
         //     checkWin();
         // }
 
-        //doPlayerInput(); // No player input in autonomous mode
-        doSpeedUI();
+        if (doPlayerInput()) {
+            world.stepRunners();
+        }
 
         turnCount++;
         text_u.text = "" + turnCount;
@@ -243,31 +243,9 @@ public class Main : MonoBehaviour {
         }
     }
 
-    private void doSpeedUI() {
-        if (pendingUp) {
-            TARGET_FPS++;
-        }
-        if (pendingDown) {
-            if (TARGET_FPS > 1) {
-                TARGET_FPS--;
-            }
-        }
-        pendingUp = false;
-        pendingDown = false;
-    }
-
-    private void doPlayerInput() {
-        if (Input.GetKeyDown("d")) {
-            actionMode = ActionMode.DIG;
-        }
-        if (Input.GetKeyDown("a")) {
-            actionMode = ActionMode.AUTODIG;
-        }
+    private bool doPlayerInput() {
         if (Input.GetKeyDown("m")) {
             actionMode = ActionMode.MOVE;
-        }
-        if (Input.GetKeyDown("p")) {
-            actionMode = ActionMode.PLACE;
         }
 
         MPos3 dir = new MPos3(0, 0, 0);
@@ -321,36 +299,10 @@ public class Main : MonoBehaviour {
         pendingUp = false;
         pendingDown = false;
 
-        //TODO Should probably organize this better
         if (foundMov) {
-            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) || uiPlaceBtnDown) {
-                if (tryPlayerAction(dir, ActionMode.PLACE)) {
-                    // Placed
-                } else {
-                    // Failed to place
-                }
-            } else if (uiDigBtnDown) {
-                if (tryPlayerAction(dir, ActionMode.DIG)) {
-                    // Dug
-                } else {
-                    // Couldn't dig; wasn't able to move. ...???
-                }
-            } else {
-                if (tryPlayerAction(dir, actionMode)) {
-                    // Did the thing
-                } else {
-                    if (actionMode == ActionMode.AUTODIG) {
-                        // AUTODIG failed to move in a direction
-                        if (tryPlayerAction(dir, ActionMode.DIG)) {
-                            // Dug
-                        } else {
-                            // Couldn't dig; wasn't able to move. ...???
-                        }
-                    }
-                    // Play bump sound?
-                }
-            }
+            tryPlayerAction(dir, actionMode);
         }
+        return foundMov;
     }
 
     private Pos3 getPlayerPos() {
@@ -382,7 +334,6 @@ public class Main : MonoBehaviour {
         Tile newTile = world.getTile(newPos);
 
         switch (mode) {
-            case ActionMode.AUTODIG: // AUTODIG defaults first to movement
             case ActionMode.MOVE:
                 foreach (Entity e in newTile.getInventory()) {
                     if (e.blocksMovement()) {
@@ -390,30 +341,6 @@ public class Main : MonoBehaviour {
                     }
                 }
                 return Inventories.move(player, world.getTile(getPlayerPos()), newTile);
-            case ActionMode.DIG:
-                Entity digged = null;
-                foreach (Entity e in newTile.getInventory()) {
-                    if (e.blocksMovement()) {
-                        digged = e;
-                        break;
-                    }
-                }
-                if (digged != null) {
-                    return Inventories.move(digged, newTile, player);
-                } else {
-                    return false;
-                }
-            case ActionMode.PLACE:
-                foreach (Entity e in newTile.getInventory()) {
-                    if (e.blocksMovement()) {
-                        return false;
-                    }
-                }
-                if (player.inventory.Count == 0) {
-                    return false;
-                }
-                Entity placed = player.inventory[player.inventory.Count - 1];
-                return Inventories.move(placed, player, newTile);
             default:
                 return false;
         }
@@ -484,8 +411,8 @@ public class Main : MonoBehaviour {
         GL.MultMatrix(transform.localToWorldMatrix);
 
         Pos3 center = getPlayerPos();
-        Pos3 visionRadius = new Pos3(((long)(horizExtent)) + 1, ((long)(vertExtent)) + 1, 1); //TODO //PARAM z vision
-        world.render(center, center - visionRadius, center + visionRadius);
+        Pos3 visionRadius = new Pos3(((long)(horizExtent)) + 1, ((long)(vertExtent)) + 1, 0); //TODO //PARAM z vision
+        world.render(center, center - visionRadius - new Pos3(0,0,1), center + visionRadius);
 
         GL.PopMatrix();
 

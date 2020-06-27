@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Entities {
-public class Drone : Creature
+public class Human : Creature
 {
-    public Drone(Inventoried parent) : base(parent) {
+    public Human(Inventoried parent) : base(parent) {
     }
 
     override protected void renderEntity() {
         GL.Begin(GL.QUADS);
-        GL.Color(ColorScheme.DRONE);
-        vertex3(-0.2f, -0.2f, 0);
-        vertex3(+0.2f, -0.2f, 0);
-        vertex3(+0.2f, +0.2f, 0);
-        vertex3(-0.2f, +0.2f, 0);
+        GL.Color(ColorScheme.HUMAN);
+        vertex3(-0.3f, -0.3f, 0);
+        vertex3(+0.3f, -0.3f, 0);
+        vertex3(+0.3f, +0.3f, 0);
+        vertex3(-0.3f, +0.3f, 0);
         GL.End();
     }
 

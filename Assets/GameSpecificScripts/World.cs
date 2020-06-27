@@ -16,12 +16,23 @@ public class World {
     private Stack<(JintRunner, ChannelReader<int>, ChannelWriter<int>)> pendingRunners = new Stack<(JintRunner, ChannelReader<int>, ChannelWriter<int>)>(); // Why stack?  Dunno!
     public List<(JintRunner, ChannelReader<int>, ChannelWriter<int>)> runners = new List<(JintRunner, ChannelReader<int>, ChannelWriter<int>)>();
 
-    public Tile genTile(Pos3 pos) {
-        //TODO Make better world, haha
+    private readonly float rockDensity;
+    private readonly float zombieDensity;
 
-        if (rand.Next(0, 6) == 0) {
-            //if (pos.x == pos.z) {
-            return makeTile(this, pos, new Air(null), new Rock(null)); //TODO It's kindof annoying that my addition of a bidirectional reference broke the tidy creation, here
+    public World(float rockDensity, float zombieDensity) {
+        this.rockDensity = rockDensity;
+        this.zombieDensity = zombieDensity;
+    }
+
+    public Tile genTile(Pos3 pos) {
+        if (pos.z != 0) {
+            return makeTile(this, pos, new Air(null), new Rock(null));
+        }
+
+        if (rand.NextDouble() <= zombieDensity) { // Zombies trump rock
+            return makeTile(this, pos, new Air(null), new Zombie(null)); //TODO It's kindof annoying that my addition of a bidirectional reference broke the tidy creation, here
+        } else if (rand.NextDouble() <= rockDensity) {
+            return makeTile(this, pos, new Air(null), new Rock(null));
         } else {
             return makeTile(this, pos, new Air(null));
         }

@@ -72,7 +72,7 @@ public class CreatureRunner : JintRunner {
             ("get", new Func<Pos3, bool>(get)),
             ("put", new Func<Pos3, bool>(put)),
             ("getPos", new Func<Pos3>(getPos)),
-            ("replicate", new Func<Pos3, bool>(replicate)),
+            //("replicate", new Func<Pos3, bool>(replicate)),
             ("die", new Action(die)) // :(
         };
         var z = new (string, Delegate)[x.Length + y.Length];
@@ -217,6 +217,7 @@ public class CreatureRunner : JintRunner {
         }
     }
 
+/*
     private bool replicate(Pos3 dir) { //TODO For some reason these cause an almost immediate crash on windows, even with low MAX_RUNNERS?
         if (checkDead()) { //TODO ???
             return false;
@@ -257,6 +258,7 @@ public class CreatureRunner : JintRunner {
             int val = syncB.Read();
         }
     }
+*/
 
     private void die() {
         dead = true;
