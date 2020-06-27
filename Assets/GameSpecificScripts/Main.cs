@@ -53,13 +53,13 @@ public class Main : MonoBehaviour {
     private ActionMode actionMode;
     private int stepsCount = 0;
     private int zombieAttention;
+    private string highscoreKey;
 
     void Start() {
-        //float rockDensity = (float)SceneChanger.globals["rock_density_float"];
-        //float zombieDensity = (float)SceneChanger.globals["zombie_density_float"];
-        //int zombieAttention = (int)SceneChanger.globals["zombie_attention_int"];
-        //Init(rockDensity, zombieDensity, zombieAttention);
-        Init(0.3f, 0.1f, 10);
+        float rockDensity = (float)SceneChanger.globals["rock_density_float"];
+        float zombieDensity = (float)SceneChanger.globals["zombie_density_float"];
+        int zombieAttention = (int)SceneChanger.globals["zombie_attention_int"];
+        Init(rockDensity, zombieDensity, zombieAttention);
     }
 
     void Init(float rockDensity, float zombieDensity, int zombieAttention) {
@@ -71,10 +71,13 @@ public class Main : MonoBehaviour {
             }
         }
 
-        int highscore = PlayerPrefs.GetInt("highscore", 0);
+        this.highscoreKey = "highscore_" + rockDensity + "_" + zombieDensity + "_" + zombieAttention;
+        Debug.Log(highscoreKey);
+        int highscore = PlayerPrefs.GetInt(highscoreKey, 0);
         text_oro.text = "" + highscore;
         this.TARGET_FPS = 60;
         this.stepsCount = 0;
+        text_u.text = "" + stepsCount;
         this.zombieAttention = zombieAttention;
         world = new World(rockDensity, zombieDensity);
         player = new Human(null);
@@ -144,7 +147,9 @@ public class Main : MonoBehaviour {
                             world.addZombie(z,
 @"while (true) {
   let hdir = getHumanDir();
-  if (hdir.normLInf() > 10) {
+  let dist = hdir.normLInf();
+  if (dist > " + zombieAttention + @") {
+    log('dying; dist ' + dist);
     return;
   }
   move(hdir.normalizeLInf());
@@ -152,14 +157,14 @@ public class Main : MonoBehaviour {
                         }
                     }
                 }
-            } else if (doPlayerInput()) {
-                float rockDensity = (float)SceneChanger.globals["rock_density_float"];
-                float zombieDensity = (float)SceneChanger.globals["zombie_density_float"];
-                int zombieAttention = (int)SceneChanger.globals["zombie_attention_int"];
-                Init(rockDensity, zombieDensity, zombieAttention);
-                return;
             }
             world.stepRunners();
+        } else if (doPlayerInput()) {
+            float rockDensity = (float)SceneChanger.globals["rock_density_float"];
+            float zombieDensity = (float)SceneChanger.globals["zombie_density_float"];
+            int zombieAttention = (int)SceneChanger.globals["zombie_attention_int"];
+            Init(rockDensity, zombieDensity, zombieAttention);
+            return;
         }
 
         checkWin();
@@ -307,10 +312,10 @@ public class Main : MonoBehaviour {
             if (tryPlayerAction(dir, actionMode)) {
                 stepsCount++; //TODO Should count waits?
                 text_u.text = "" + stepsCount;
-                int highscore = PlayerPrefs.GetInt("highscore", stepsCount);
+                int highscore = PlayerPrefs.GetInt(highscoreKey, 0);
                 if (stepsCount > highscore) {
                     highscore = stepsCount;
-                    PlayerPrefs.SetInt("highscore", stepsCount);
+                    PlayerPrefs.SetInt(highscoreKey, stepsCount);
                 }
                 text_oro.text = "" + highscore;
             }

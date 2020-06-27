@@ -20,6 +20,16 @@ public class SceneChanger : MonoBehaviour
         globals[name] = value;
     }
 
+    public void saveGlobalInt(string name, float value) {
+        Debug.Log("saveGlobalInt " + name + " " + ((int)value));
+        globals[name] = (int)value;
+    }
+
+    public void saveGlobalInt(string name, int value) {
+        Debug.Log("saveGlobalInt " + name + " " + value);
+        globals[name] = value;
+    }
+
     public void saveGlobalBool(string name, bool value) {
         Debug.Log("saveGlobalBool " + name + " " + value);
         globals[name] = value;

@@ -24,8 +24,8 @@ public class World {
     private readonly float zombieDensity;
 
     public World(float rockDensity, float zombieDensity) {
-        this.rockDensity = rockDensity;
-        this.zombieDensity = zombieDensity;
+        this.rockDensity = rockDensity/100f;
+        this.zombieDensity = zombieDensity/100f;
     }
 
     public Tile genTile(Pos3 pos) {
