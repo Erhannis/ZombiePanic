@@ -57,8 +57,6 @@ public class CreatureRunner : JintRunner {
     private readonly ChannelWriter<int> syncA;
     private readonly ChannelReader<int> syncB;
 
-    private bool dead = false;
-
     public CreatureRunner(Creature creature, ChannelWriter<int> syncA, ChannelReader<int> syncB, string program) : base(program) {
         this.creature = creature;
         this.syncA = syncA;
@@ -72,6 +70,7 @@ public class CreatureRunner : JintRunner {
             ("get", new Func<Pos3, bool>(get)),
             ("put", new Func<Pos3, bool>(put)),
             ("getPos", new Func<Pos3>(getPos)),
+            ("getHumanDir", new Func<Pos3>(getHumanDir)),
             //("replicate", new Func<Pos3, bool>(replicate)),
             ("die", new Action(die)) // :(
         };
@@ -107,6 +106,9 @@ public class CreatureRunner : JintRunner {
                 Tile from = parent;
                 Tile to = parent.parent.getTile(parent.pos + dir);
                 foreach (Entity e in to.getInventory()) {
+                    if (e is Human) {
+                        (e as Human).alive = false;
+                    }
                     if (e.blocksMovement()) {
                         return false;
                     }
@@ -217,51 +219,65 @@ public class CreatureRunner : JintRunner {
         }
     }
 
-/*
-    private bool replicate(Pos3 dir) { //TODO For some reason these cause an almost immediate crash on windows, even with low MAX_RUNNERS?
-        if (checkDead()) { //TODO ???
-            return false;
-        }
+    // Assumes no picking-up zombies
+    private Pos3 getHumanDir() { //TODO READ LOCK
         syncA.Write(0);
         try {
-            if (dir.normLInf() > 1) {
-                return false;
+            Tile tile = creature.parent as Tile;
+            if (tile == null) {
+                return null;
             }
-
-            var parent = creature.parent as Tile;
-            if (parent != null && parent.parent != null) {
-                Tile target = parent.parent.getTile(parent.pos + dir);
-                if (creature.blocksMovement()) { // Currently preventing two blocking entities from colocating
-                    foreach (Entity e in target.getInventory()) {
-                        if (e.blocksMovement()) {
-                            return false;
-                        }
-                    }
-                }
-
-                var world = parent.parent;
-
-                //TODO For now I'm just restricting this to drones
-                var mother = creature as Drone;
-                if (mother == null) {
-                    return false;
-                }
-
-                var larva = new Drone(null); //TODO Copy, not Drone
-                world.getTile(target.pos).addItem(larva);
-                world.addRunner(larva, this.program); //TODO Concurrent modification
-
-                return true;
-            }
-            return false;
+            return (tile.parent.player.parent as Tile).pos - tile.pos;
         } finally {
             int val = syncB.Read();
         }
     }
-*/
+
+    /*
+        private bool replicate(Pos3 dir) { //TODO For some reason these cause an almost immediate crash on windows, even with low MAX_RUNNERS?
+            if (checkDead()) { //TODO ???
+                return false;
+            }
+            syncA.Write(0);
+            try {
+                if (dir.normLInf() > 1) {
+                    return false;
+                }
+
+                var parent = creature.parent as Tile;
+                if (parent != null && parent.parent != null) {
+                    Tile target = parent.parent.getTile(parent.pos + dir);
+                    if (creature.blocksMovement()) { // Currently preventing two blocking entities from colocating
+                        foreach (Entity e in target.getInventory()) {
+                            if (e.blocksMovement()) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    var world = parent.parent;
+
+                    //TODO For now I'm just restricting this to drones
+                    var mother = creature as Drone;
+                    if (mother == null) {
+                        return false;
+                    }
+
+                    var larva = new Drone(null); //TODO Copy, not Drone
+                    world.getTile(target.pos).addItem(larva);
+                    world.addRunner(larva, this.program); //TODO Concurrent modification
+
+                    return true;
+                }
+                return false;
+            } finally {
+                int val = syncB.Read();
+            }
+        }
+    */
 
     private void die() {
-        dead = true;
+        creature.alive = false;
         syncA.Write(0);
         try {
             creature.parent.removeItem(creature);
@@ -271,7 +287,7 @@ public class CreatureRunner : JintRunner {
     }
 
     private bool checkDead() { //TODO ???
-        return dead;
+        return !creature.alive;
     }
 }
 

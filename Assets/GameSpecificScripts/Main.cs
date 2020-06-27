@@ -30,7 +30,7 @@ public class Main : MonoBehaviour {
 
     private System.Random rand = new System.Random();
 
-    private int TARGET_FPS = 4;
+    private int TARGET_FPS = 60;
 
     private const int PX_PER_UNIT = 100;
     private const float BOARD_WIDTH = 22.0f; //TODO Calc from screen?
@@ -51,15 +51,15 @@ public class Main : MonoBehaviour {
     private bool pendingDown = false;
 
     private ActionMode actionMode;
-    private float requiredDensity = 60;
-    private long turnCount = 0;
+    private int stepsCount = 0;
+    private int zombieAttention;
 
     void Start() {
         //float rockDensity = (float)SceneChanger.globals["rock_density_float"];
         //float zombieDensity = (float)SceneChanger.globals["zombie_density_float"];
         //int zombieAttention = (int)SceneChanger.globals["zombie_attention_int"];
         //Init(rockDensity, zombieDensity, zombieAttention);
-        Init(0.1f, 0.1f, 10);
+        Init(0.3f, 0.1f, 10);
     }
 
     void Init(float rockDensity, float zombieDensity, int zombieAttention) {
@@ -71,11 +71,14 @@ public class Main : MonoBehaviour {
             }
         }
 
-        this.TARGET_FPS = 4;
-        this.turnCount = 0;
-        this.requiredDensity = requiredDensity;
+        int highscore = PlayerPrefs.GetInt("highscore", 0);
+        text_oro.text = "" + highscore;
+        this.TARGET_FPS = 60;
+        this.stepsCount = 0;
+        this.zombieAttention = zombieAttention;
         world = new World(rockDensity, zombieDensity);
         player = new Human(null);
+        world.player = player;
         actionMode = ActionMode.MOVE;
         Tile origin = world.getTile(new Pos3(0, 0, 0));
         foreach (Entity block in origin.getInventory().Where(e => e.blocksMovement()).ToList()) {
@@ -129,12 +132,36 @@ public class Main : MonoBehaviour {
         //     checkWin();
         // }
 
-        if (doPlayerInput()) {
+        if (player.alive && doPlayerInput()) {
+            // Check zombie 
+            var ppos = getPlayerPos();
+            for (long y = ppos.y - zombieAttention; y <= ppos.y + zombieAttention; y++) {
+                for (long x = ppos.x - zombieAttention; x <= ppos.x + zombieAttention; x++) {
+                    Tile t = world.getTile(new Pos3(x, y, 0));
+                    List<Entity> zombies = t.getInventory().Where(e => e is Zombie).ToList();
+                    foreach (Zombie z in zombies) {
+                        if (!world.wakeZombies.ContainsKey(z)) {
+                            world.addZombie(z,
+@"while (true) {
+  let hdir = getHumanDir();
+  if (hdir.normLInf() > 10) {
+    return;
+  }
+  move(hdir.normalizeLInf());
+}");
+                        }
+                    }
+                }
+            } else if (doPlayerInput()) {
+                float rockDensity = (float)SceneChanger.globals["rock_density_float"];
+                float zombieDensity = (float)SceneChanger.globals["zombie_density_float"];
+                int zombieAttention = (int)SceneChanger.globals["zombie_attention_int"];
+                Init(rockDensity, zombieDensity, zombieAttention);
+                return;
+            }
             world.stepRunners();
         }
 
-        turnCount++;
-        text_u.text = "" + turnCount;
         checkWin();
 
         sw_u.Stop();
@@ -148,34 +175,11 @@ public class Main : MonoBehaviour {
         //}
     }
 
-    private bool hasWon = false;
     private void checkWin() {
-        long blocks = 0;
-        long total = 0;
-        var R = 3; //TODO PARAM
-        for (int x = -R; x <= R; x++) {
-            for (int y = -R; y <= R; y++) {
-                for (int z = -R; z <= R; z++) {
-                    total++;
-                    Tile t = world.getTile(new Pos3(x, y, z));
-                    foreach (Entity e in t.getInventory()) {
-                        if (e is Rock) {
-//                        if (e.blocksMovement()) {
-                            blocks++;
-                            break; // Not allowed to try to stack blocks
-                        }
-                    }
-                }
-            }
-        }
-        if ((((double)blocks) / total) * 100 >= requiredDensity) {
-            Camera.main.backgroundColor = Color.green;
-            if (!hasWon) {
-                hasWon = true;
-                text_oro.text = "" + turnCount;
-            }
-        } else {
+        if (player.alive) {
             Camera.main.backgroundColor = BG_COLOR;
+        } else {
+            Camera.main.backgroundColor = Color.red;
         }
     }
 
@@ -300,7 +304,16 @@ public class Main : MonoBehaviour {
         pendingDown = false;
 
         if (foundMov) {
-            tryPlayerAction(dir, actionMode);
+            if (tryPlayerAction(dir, actionMode)) {
+                stepsCount++; //TODO Should count waits?
+                text_u.text = "" + stepsCount;
+                int highscore = PlayerPrefs.GetInt("highscore", stepsCount);
+                if (stepsCount > highscore) {
+                    highscore = stepsCount;
+                    PlayerPrefs.SetInt("highscore", stepsCount);
+                }
+                text_oro.text = "" + highscore;
+            }
         }
         return foundMov;
     }

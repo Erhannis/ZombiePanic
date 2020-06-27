@@ -5,6 +5,7 @@ using UnityEngine;
 namespace Entities {
     public abstract class Creature : Entity, Inventoried {
         public List<Entity> inventory = new List<Entity>();
+        public bool alive = true;
 
         //TODO HP, etc.
         public Creature(Inventoried parent) : base(parent) {            

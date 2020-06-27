@@ -49,6 +49,10 @@ public class Pos3 //TODO Extend an xyz interface?
         return max;
     }
 
+    public Pos3 normalizeLInf() {
+        return new Pos3(Math.Sign(x), Math.Sign(y), Math.Sign(z));
+    }
+
     public override string ToString() => $"({x}, {y}, {z})";
 
     public override bool Equals(object obj)

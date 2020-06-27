@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Entities;
 using Jibu;
@@ -15,6 +16,9 @@ public class World {
     private System.Random rand = new System.Random(); //TODO Use a seed or something
     private Stack<(JintRunner, ChannelReader<int>, ChannelWriter<int>)> pendingRunners = new Stack<(JintRunner, ChannelReader<int>, ChannelWriter<int>)>(); // Why stack?  Dunno!
     public List<(JintRunner, ChannelReader<int>, ChannelWriter<int>)> runners = new List<(JintRunner, ChannelReader<int>, ChannelWriter<int>)>();
+    public Dictionary<Zombie, JintRunner> wakeZombies = new Dictionary<Zombie, JintRunner>();
+
+    public Human player; // Kinda hacky
 
     private readonly float rockDensity;
     private readonly float zombieDensity;
@@ -54,12 +58,14 @@ public class World {
         }
         return tile;
     }
-    public void addRunner(Creature creature, string program) {
+
+    public void addZombie(Zombie zombie, string program) {
         Channel<int> syncA = new Channel<int>();
         Channel<int> syncB = new Channel<int>();
         if (runners.Count + pendingRunners.Count < Settings.MAX_RUNNERS) {
-            CreatureRunner cr = new CreatureRunner(creature, syncA.ChannelWriter, syncB.ChannelReader, program);
+            CreatureRunner cr = new CreatureRunner(zombie, syncA.ChannelWriter, syncB.ChannelReader, program);
             pendingRunners.Push((cr, syncA.ChannelReader, syncB.ChannelWriter));
+            wakeZombies.Add(zombie, cr);
             cr.Start();
         } else {
             //TODO Notify failure?
@@ -78,6 +84,7 @@ public class World {
                 return false;
             } catch (PoisonException e) {
                 Debug.LogError(e);
+                wakeZombies.Remove(wakeZombies.First(kvp => kvp.Value == p.Item1).Key);
                 return true;
             }
         });

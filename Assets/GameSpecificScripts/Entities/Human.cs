@@ -10,7 +10,11 @@ public class Human : Creature
 
     override protected void renderEntity() {
         GL.Begin(GL.QUADS);
-        GL.Color(ColorScheme.HUMAN);
+        if (alive) {
+            GL.Color(ColorScheme.HUMAN);
+        } else {
+            GL.Color(ColorScheme.DEAD_HUMAN);
+        }
         vertex3(-0.3f, -0.3f, 0);
         vertex3(+0.3f, -0.3f, 0);
         vertex3(+0.3f, +0.3f, 0);

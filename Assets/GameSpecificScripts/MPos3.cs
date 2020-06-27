@@ -49,6 +49,10 @@ public class MPos3 {
         return max;
     }
 
+    public MPos3 normalizeLInf() {
+        return new MPos3(Math.Sign(x), Math.Sign(y), Math.Sign(z));
+    }
+
     public override string ToString() => $"({x}, {y}, {z})";
 
     public override bool Equals(object obj)
